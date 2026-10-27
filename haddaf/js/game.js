@@ -5,11 +5,12 @@
 /* ============ التخزين (محمي حيث يُحظر التخزين) ============ */
 const KEY = 'haddaf.v1';
 const MAX_HEARTS = 5, HEART_REGEN_MS = 2 * 60 * 1000;
-const DEFAULTS = { levels: {}, hearts: MAX_HEARTS, heartsAt: 0, name: 'البطل', kit: '#2563eb', sound: true, slowmo: true, points: 0 };
+const REWIND_COST = 50;
+const DEFAULTS = { levels: {}, hearts: MAX_HEARTS, heartsAt: 0, name: 'البطل', kit: '#2563eb', skin: '#e8b894', hair: '#3a2416', sound: true, slowmo: true, points: 0, cash: 0, stats: { attempts: 0, goals: 0, assists: 0, curves: 0, lofts: 0 } };
 let save = loadSave();
 function loadSave() {
-  try { const raw = localStorage.getItem(KEY); if (raw) return Object.assign({}, DEFAULTS, JSON.parse(raw)); } catch (e) {}
-  return Object.assign({}, DEFAULTS);
+  try { const raw = localStorage.getItem(KEY); if (raw) { const o = Object.assign({}, DEFAULTS, JSON.parse(raw)); o.stats = Object.assign({}, DEFAULTS.stats, o.stats || {}); return o; } } catch (e) {}
+  return Object.assign({}, DEFAULTS, { stats: Object.assign({}, DEFAULTS.stats) });
 }
 function persist() { try { localStorage.setItem(KEY, JSON.stringify(save)); } catch (e) {} }
 
@@ -31,6 +32,10 @@ const W = 100, H = 150, GOAL_L = 35, GOAL_R = 65, GOAL_H = 12, GK_Y = 3;
 const TOTAL_LEVELS = 60, PER_SEASON = 10;
 const SEASONS = ['الدوري المحلي', 'كأس البطولة', 'الدوري الممتاز', 'دوري الأبطال', 'كأس القارة', 'كأس العالم'];
 const KITS = ['#2563eb', '#dc2626', '#16a34a', '#f59e0b', '#9333ea', '#0891b2', '#111827', '#f472b6'];
+const SKINS = ['#f3d3b8', '#e8b894', '#c68642', '#8d5524', '#5c3a21'];
+const HAIRS = ['#1b1b1b', '#3a2416', '#8b5a2b', '#d4a017', '#b0b0b0', '#c0392b'];
+const HOME_CLUBS = ['النسور', 'الصقور', 'الأسود', 'النمور', 'العمالقة', 'الأبطال'];
+const AWAY_CLUBS = ['الموج', 'الرعد', 'الفرسان', 'البرق', 'الجبل', 'الشعلة', 'القلعة', 'الرياح', 'السهم', 'الكوكب', 'الحصن', 'الفجر'];
 
 /* ============ المستويات ============ */
 const HINTS = {
@@ -41,7 +46,7 @@ const HINTS = {
   6: 'الخط الطويل جداً يرفع الكرة فوق المدافعين… وربما فوق العارضة!',
   11: 'المدافعون المتحرّكون يفتحون ثغرات. انتظر اللحظة المناسبة.',
 };
-const SALTS = {}; // تعديلات بذرة لمستويات تم التحقق من إمكانية حلّها
+const SALTS = { 4: 1, 10: 1, 14: 1, 17: 4, 19: 2, 23: 2, 24: 1, 26: 3, 27: 1, 30: 1, 31: 2, 32: 7, 34: 1, 37: 1, 38: 4, 40: 1, 41: 2, 43: 1, 44: 1, 45: 1, 46: 14, 47: 5, 49: 2, 50: 4, 52: 1, 53: 8, 55: 5, 56: 1, 57: 1, 58: 1, 59: 4, 60: 1 }; // تعديلات بذرة لمستويات تم التحقق من إمكانية حلّها آلياً
 function handLevel(n) {
   if (n === 1) return { ball: { x: 50, y: 70 }, teammates: [], defenders: [], gk: { speed: 10, reaction: .45, reach: 4.5 } };
   if (n === 2) return { ball: { x: 50, y: 80 }, teammates: [], defenders: [{ x: 50, y: 45, react: 0 }], gk: { speed: 13, reaction: .4, reach: 4.8 } };
@@ -97,6 +102,8 @@ function generateLevel(n) {
 }
 function finalizeLevel(level, n) {
   level.n = n; level.season = Math.ceil(n / PER_SEASON); level.hint = HINTS[n] || '';
+  const r = makeRng(99 + n * 31);
+  level.match = { home: HOME_CLUBS[level.season - 1], away: AWAY_CLUBS[Math.floor(r() * AWAY_CLUBS.length)], minute: 48 + Math.floor(r() * 44), homeGoals: Math.floor(r() * 2), awayGoals: Math.floor(r() * 2) };
   return level;
 }
 
@@ -151,12 +158,14 @@ const starsOf = n => (save.levels[n] && save.levels[n].stars) || 0;
 const totalStars = () => Object.values(save.levels).reduce((a, l) => a + (l.stars || 0), 0);
 function currentLevel() { for (let n = 1; n <= TOTAL_LEVELS; n++) if (!starsOf(n)) return n; return TOTAL_LEVELS; }
 const isUnlocked = n => n === 1 || starsOf(n - 1) > 0;
+const seasonDone = s => { for (let i = 1; i <= PER_SEASON; i++) if (!starsOf(s * PER_SEASON + i)) return false; return true; };
+const trophies = () => SEASONS.filter((_, s) => seasonDone(s)).length;
 
 /* ============ الشاشات ============ */
-const screens = { home: $('#screen-home'), levels: $('#screen-levels'), settings: $('#screen-settings'), play: $('#screen-play') };
+const screens = { home: $('#screen-home'), levels: $('#screen-levels'), settings: $('#screen-settings'), stats: $('#screen-stats'), play: $('#screen-play') };
 function show(name) {
   Object.entries(screens).forEach(([k, el]) => el.hidden = k !== name);
-  if (name === 'home') renderHome(); if (name === 'levels') renderLevels(); if (name === 'settings') renderSettings();
+  if (name === 'home') renderHome(); if (name === 'levels') renderLevels(); if (name === 'settings') renderSettings(); if (name === 'stats') renderStats();
   if (name !== 'play') game.active = false;
   renderHearts();
 }
@@ -168,11 +177,21 @@ function renderHome() {
   $('#home-points').textContent = save.points.toLocaleString('ar-EG');
   $('#home-stars').textContent = `${totalStars().toLocaleString('ar-EG')} / ${(TOTAL_LEVELS * 3).toLocaleString('ar-EG')}`;
   $('#home-level').textContent = AR_DIGITS(currentLevel());
+  $('#home-cash').textContent = AR_DIGITS(save.cash);
+  $('#home-kit').style.background = save.kit;
   $('#btn-play').textContent = currentLevel() === 1 && !starsOf(1) ? '▶ ابدأ' : `▶ المستوى ${AR_DIGITS(currentLevel())}`;
 }
 $('#btn-play').addEventListener('click', () => startLevel(currentLevel()));
 $('#btn-levels').addEventListener('click', () => show('levels'));
 $('#btn-settings').addEventListener('click', () => show('settings'));
+$('#btn-stats').addEventListener('click', () => show('stats'));
+function renderStats() {
+  const st = save.stats, best = Object.values(save.levels).reduce((a, l) => Math.max(a, l.best || 0), 0);
+  const rows = [['⚽ أهداف', st.goals], ['🎯 محاولات', st.attempts], ['🤝 أهداف بعد تمريرة', st.assists], ['🌀 كرات ملتفّة', st.curves], ['🪁 كرات عالية', st.lofts], ['⭐ نجوم', totalStars()], ['🏅 أفضل نتيجة في مستوى', best], ['💰 نقود', save.cash]];
+  $('#stats-list').innerHTML = rows.map(([k, v]) => `<li><span>${k}</span><b>${AR_DIGITS(v)}</b></li>`).join('');
+  $('#stats-rate').textContent = st.attempts ? `${AR_DIGITS(Math.round(100 * st.goals / st.attempts))}٪ نسبة التسجيل` : 'لم تلعب بعد';
+  $('#stats-trophies').innerHTML = SEASONS.map((name, s) => `<div class="trophy ${seasonDone(s) ? 'trophy--won' : ''}"><span>🏆</span><small>${name}</small></div>`).join('');
+}
 
 function renderLevels() {
   const grid = $('#levels-grid'); grid.innerHTML = '';
@@ -180,7 +199,7 @@ function renderLevels() {
   for (let s = 0; s < SEASONS.length; s++) {
     const sec = document.createElement('div'); sec.className = 'season';
     let got = 0; for (let i = 1; i <= PER_SEASON; i++) got += starsOf(s * PER_SEASON + i);
-    sec.innerHTML = `<div class="season__head"><h3>${SEASONS[s]}</h3><span>★ ${AR_DIGITS(got)} / ${AR_DIGITS(PER_SEASON * 3)}</span></div><div class="season__grid"></div>`;
+    sec.innerHTML = `<div class="season__head"><h3>${seasonDone(s) ? '🏆 ' : ''}${SEASONS[s]}</h3><span>★ ${AR_DIGITS(got)} / ${AR_DIGITS(PER_SEASON * 3)}</span></div><div class="season__grid"></div>`;
     const g = $('.season__grid', sec);
     for (let i = 1; i <= PER_SEASON; i++) {
       const n = s * PER_SEASON + i, st = starsOf(n), unlocked = isUnlocked(n);
@@ -197,8 +216,9 @@ function renderLevels() {
 
 function renderSettings() {
   $('#set-name').value = save.name; $('#set-sound').checked = !!save.sound; $('#set-slowmo').checked = !!save.slowmo;
-  const kits = $('#set-kits'); kits.innerHTML = '';
-  KITS.forEach(c => { const b = document.createElement('button'); b.type = 'button'; b.style.background = c; b.className = c === save.kit ? 'on' : ''; b.setAttribute('aria-label', 'لون'); b.addEventListener('click', () => { save.kit = c; persist(); renderSettings(); }); kits.appendChild(b); });
+  const swatches = (id, list, key) => { const box = $(id); box.innerHTML = ''; list.forEach(c => { const b = document.createElement('button'); b.type = 'button'; b.style.background = c; b.className = c === save[key] ? 'on' : ''; b.setAttribute('aria-label', 'لون'); b.addEventListener('click', () => { save[key] = c; persist(); renderSettings(); }); box.appendChild(b); }); };
+  swatches('#set-kits', KITS, 'kit'); swatches('#set-skins', SKINS, 'skin'); swatches('#set-hairs', HAIRS, 'hair');
+  drawPreview();
 }
 $('#set-name').addEventListener('input', e => { save.name = e.target.value.trim() || 'البطل'; persist(); });
 $('#set-sound').addEventListener('change', e => { save.sound = e.target.checked; persist(); if (save.sound) audio.whistle(); });
@@ -206,7 +226,7 @@ $('#set-slowmo').addEventListener('change', e => { save.slowmo = e.target.checke
 $('#set-reset').addEventListener('click', () => {
   modal(`<div class="menu"><h3>مسح التقدّم؟</h3><p class="result__msg">ستُحذف النجوم والنقاط ولا يمكن التراجع.</p>
     <button class="btn btn--danger btn--block" id="m-reset">نعم، امسح</button><button class="btn btn--ghost btn--block" id="m-cancel">إلغاء</button></div>`);
-  $('#m-reset').addEventListener('click', () => { save = Object.assign({}, DEFAULTS, { name: save.name, kit: save.kit, sound: save.sound, slowmo: save.slowmo }); persist(); closeModal(); show('home'); toast('تم مسح التقدّم'); });
+  $('#m-reset').addEventListener('click', () => { save = Object.assign({}, DEFAULTS, { stats: Object.assign({}, DEFAULTS.stats), name: save.name, kit: save.kit, skin: save.skin, hair: save.hair, sound: save.sound, slowmo: save.slowmo }); persist(); closeModal(); show('home'); toast('تم مسح التقدّم'); });
   $('#m-cancel').addEventListener('click', closeModal);
 });
 
@@ -226,6 +246,7 @@ function startLevel(n) {
   game.active = true; game.last = 0;
   $('#hud-season').textContent = SEASONS[game.level.season - 1];
   $('#hud-level').textContent = `المستوى ${AR_DIGITS(n)}`;
+  renderScoreboard();
   const hint = $('#hint'); hint.hidden = !game.level.hint; hint.textContent = game.level.hint;
   $('#objective').textContent = `الهدف: سجّل خلال ${AR_DIGITS(game.level.par)} ${game.level.par === 1 ? 'لمسة' : 'لمسات'} لتحصل على ثلاث نجوم`;
   audio.whistle();
@@ -252,6 +273,10 @@ function resetState(keepTouches) {
   };
   game.confetti = []; game.shake = 0;
   updateTouchesHud();
+}
+function renderScoreboard() {
+  const m = game.level.match, st = game.state, scored = st && st.result === 'goal' ? 1 : 0;
+  $('#scoreboard').innerHTML = `<span class="sb__club"><i style="background:${save.kit}"></i>${m.home}</span><b>${AR_DIGITS(m.homeGoals + scored)} - ${AR_DIGITS(m.awayGoals)}</b><span class="sb__club"><i style="background:#e63946"></i>${m.away}</span><span class="sb__min">${AR_DIGITS(m.minute + (st ? st.touches : 0))}'</span>`;
 }
 function updateTouchesHud() { const st = game.state; $('#hud-touches').textContent = `اللمسات ${AR_DIGITS(st.touches)} / ${AR_DIGITS(game.level.par)}`; }
 
@@ -327,12 +352,13 @@ function curveOf(pts) { if (pts.length < 3) return 0; const a = pts[0], b = pts[
 
 function kick(pts) {
   const st = game.state, L = pathLength(pts);
+  st.snapshot = JSON.parse(JSON.stringify({ holder: st.holder, holderIdx: st.holderIdx, touches: st.touches, ball: st.ball, teammates: st.teammates, defenders: st.defenders, gk: st.gk, hero: st.hero, time: st.time }));
   st.path = pts; st.pathS = 0; st.speed = clamp(L * 1.1 + 22, 36, 115); st.loft = loftFor(L); st.curve = curveOf(pts);
   st.ball.x = pts[0].x; st.ball.y = pts[0].y; st.ball.h = 0;
   st.phase = 'flight'; st.kickedAt = st.time; st.lastKicker = st.holderIdx;
   st.touches++; updateTouchesHud();
   st.gk.timer = 0; st.gk.target = null; st.gk.lastTarget = st.gk.x;
-  audio.kick(st.speed / 112);
+  if (!game.headless) audio.kick(st.speed / 115);
 }
 
 /* --- المحاكاة --- */
@@ -415,7 +441,7 @@ function receive(i) {
   st.phase = 'aim'; st.holder = { x: t.x, y: t.y }; st.holderIdx = i; st.path = null;
   st.ball.x = t.x; st.ball.y = t.y + 2.5; st.ball.h = 0; st.ball.vx = st.ball.vy = 0;
   st.hero = { x: t.x, y: t.y };
-  audio.pass(); toast('تمريرة جميلة! سدّد الآن');
+  if (!game.headless) { audio.pass(); toast('تمريرة جميلة! سدّد الآن'); }
 }
 const MESSAGES = {
   goal: ['هدف!', 'هدف رائع!', 'يا لها من تسديدة!'], save: ['صدّها الحارس'], block: ['اعترضها المدافع'], post: ['القائم!'],
@@ -426,7 +452,10 @@ function finish(kind) {
   if (game.headless) return;
   const banner = $('#banner'); banner.hidden = false;
   const msgs = MESSAGES[kind]; const msg = msgs[Math.floor(Math.random() * msgs.length)];
+  save.stats.attempts++;
   if (kind === 'goal') {
+    save.stats.goals++; if (st.touches >= 2) save.stats.assists++; if (st.curve >= 10) save.stats.curves++; if (st.ball.h >= 6) save.stats.lofts++;
+    renderScoreboard();
     audio.goal(); game.shake = .6;
     for (let i = 0; i < 90; i++) game.confetti.push({ x: Math.random(), y: -.1 - Math.random() * .3, vy: .25 + Math.random() * .4, vx: (Math.random() - .5) * .3, c: ['#ffd21f', '#3ddc84', '#ff5c5c', '#fff', save.kit][i % 5], r: Math.random() * 6.28, s: 4 + Math.random() * 6 });
     const stars = starsFor();
@@ -448,20 +477,24 @@ function starsFor() {
   if (quality) stars++;
   return stars;
 }
+const prevStarsRef = n => starsOf(n);
 function resultModal(goal, stars, msg) {
   $('#banner').hidden = true;
   const n = game.level.n, st = game.state;
   if (goal) {
     const pts = stars * 100 + Math.round(st.speed) + (st.curve >= 10 ? 50 : 0) + (st.ball.h >= 6 ? 40 : 0);
+    const cash = stars * 20 + (st.curve >= 10 ? 10 : 0) + (st.ball.h >= 6 ? 10 : 0) + (!prevStarsRef(n) ? 20 : 0);
     const prevStars = starsOf(n);
     const rec = save.levels[n] || { stars: 0, best: 0 };
     rec.stars = Math.max(rec.stars, stars); rec.best = Math.max(rec.best, pts); save.levels[n] = rec;
-    save.points += pts; persist();
+    save.points += pts; save.cash += cash; persist();
+    const wonTrophy = seasonDone(game.level.season - 1) && n % PER_SEASON === 0;
     const notes = [];
     if (st.curve >= 10) notes.push('كرة ملتفّة +٥٠'); if (st.ball.h >= 6) notes.push('كرة عالية +٤٠'); if (st.touches <= game.level.par) notes.push('ضمن اللمسات'); else notes.push(`تجاوزت اللمسات (${AR_DIGITS(st.touches)} من ${AR_DIGITS(game.level.par)})`);
     modal(`<div class="result"><div class="result__title result__title--goal">هدف!</div>
       <div class="result__stars">${[1, 2, 3].map(k => `<i class="${k <= stars ? 'on' : ''}">★</i>`).join('')}</div>
-      <div class="result__pts"><b>+${AR_DIGITS(pts)}</b> نقطة${stars > prevStars && prevStars ? ' • رقم جديد' : ''}</div>
+      <div class="result__pts"><b>+${AR_DIGITS(pts)}</b> نقطة • <b>+${AR_DIGITS(cash)}</b> 💰${stars > prevStars && prevStars ? ' • رقم جديد' : ''}</div>
+      ${wonTrophy ? `<div class="result__trophy">🏆 فزت بكأس ${SEASONS[game.level.season - 1]}!</div>` : ''}
       <p class="result__msg">${notes.join(' • ')}</p>
       <div class="result__actions">
         ${n < TOTAL_LEVELS ? `<button class="btn btn--block" id="m-next">المستوى التالي</button>` : `<p class="result__msg">أنهيت كل المستويات! أنت أسطورة ⚽</p>`}
@@ -475,10 +508,21 @@ function resultModal(goal, stars, msg) {
       <div class="hearts">${heartsHtml()}</div>
       <div class="result__actions">
         <button class="btn btn--block" id="m-retry" ${save.hearts <= 0 ? 'disabled' : ''}>أعد المحاولة</button>
+        <button class="btn btn--ghost btn--block" id="m-rewind" ${save.cash < REWIND_COST || !st.snapshot ? 'disabled' : ''}>⏪ إعادة اللقطة (${AR_DIGITS(REWIND_COST)} 💰) — يعيد القلب</button>
         <button class="btn btn--ghost btn--block" id="m-levels">المستويات</button></div></div>`);
     $('#m-retry').addEventListener('click', () => { closeModal(); startLevel(n); });
+    $('#m-rewind').addEventListener('click', rewind);
   }
   $('#m-levels').addEventListener('click', () => { closeModal(); show('levels'); });
+}
+function rewind() {
+  const st = game.state; if (!st.snapshot || save.cash < REWIND_COST) return;
+  save.cash -= REWIND_COST; syncHearts(); save.hearts = Math.min(MAX_HEARTS, save.hearts + 1); if (save.hearts >= MAX_HEARTS) save.heartsAt = 0; persist(); renderHearts();
+  const snap = st.snapshot;
+  Object.assign(st, snap, { phase: 'aim', result: null, path: null, drag: null, snapshot: null, slow: 1 });
+  st.ball.vx = st.ball.vy = 0; st.ball.h = 0;
+  closeModal(); $('#banner').hidden = true; game.shake = 0; game.confetti = [];
+  updateTouchesHud(); renderScoreboard(); toast('أُعيدت اللقطة. حاول مجدداً');
 }
 $('#btn-pause').addEventListener('click', () => {
   if (!game.active) return;
@@ -559,7 +603,7 @@ function draw(dt) {
   ents.push({ y: st.gk.y, draw: () => drawPlayer(st.gk.x, st.gk.y, '#ffb703', '#111', st.gk.dive ? st.gk.dive : st.gk.face, true, '1') });
   st.defenders.forEach((d, i) => ents.push({ y: d.y, draw: () => drawPlayer(d.x, d.y, '#e63946', '#fff', d.face, false, String(i + 2)) }));
   st.teammates.forEach((t, i) => ents.push({ y: t.y, draw: () => drawPlayer(t.x, t.y, save.kit, '#fff', 0, false, String(i + 7), st.holderIdx === i) }));
-  if (st.holderIdx === -1) ents.push({ y: st.hero.y, draw: () => drawPlayer(st.hero.x, st.hero.y, save.kit, '#fff', 0, false, '10', true) });
+  if (st.holderIdx === -1) ents.push({ y: st.hero.y, draw: () => drawPlayer(st.hero.x, st.hero.y, save.kit, '#fff', 0, false, '10', true, save.skin, save.hair) });
   ents.push({ y: st.ball.y + .01, draw: () => drawBall() });
   ents.sort((a, b) => a.y - b.y).forEach(e => e.draw());
 
@@ -599,7 +643,7 @@ function drawGoal(v, front) {
     ctx.restore();
   }
 }
-function drawPlayer(wx, wy, kit, numColor, face, isGk, num, isHero) {
+function drawPlayer(wx, wy, kit, numColor, face, isGk, num, isHero, skin, hair) {
   const s = toScreen(wx, wy), r = s.s * 3.2;
   ctx.save();
   // ظل
@@ -614,8 +658,8 @@ function drawPlayer(wx, wy, kit, numColor, face, isGk, num, isHero) {
   ctx.strokeStyle = kit; ctx.lineWidth = r * .35; ctx.lineCap = 'round';
   ctx.beginPath(); ctx.moveTo(-r * .8, 0); ctx.lineTo(-r * 1.2 + lean, r * .35); ctx.moveTo(r * .8, 0); ctx.lineTo(r * 1.2 + lean, r * .35); ctx.stroke();
   // الرأس
-  ctx.fillStyle = '#e8b894'; ctx.beginPath(); ctx.arc(lean * .5, -r * .55, r * .5, 0, 7); ctx.fill();
-  ctx.fillStyle = isGk ? '#2b2b2b' : '#3a2416'; ctx.beginPath(); ctx.arc(lean * .5, -r * .62, r * .5, Math.PI, 0); ctx.fill();
+  ctx.fillStyle = skin || '#e8b894'; ctx.beginPath(); ctx.arc(lean * .5, -r * .55, r * .5, 0, 7); ctx.fill();
+  ctx.fillStyle = hair || (isGk ? '#2b2b2b' : '#3a2416'); ctx.beginPath(); ctx.arc(lean * .5, -r * .62, r * .5, Math.PI, 0); ctx.fill();
   // الرقم
   ctx.fillStyle = numColor; ctx.font = `bold ${Math.max(7, r * .8)}px Tajawal, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(num, lean * .3, r * .15);
   ctx.restore();
@@ -633,6 +677,20 @@ function drawBall() {
   ctx.beginPath(); ctx.arc(0, 0, r * .18, 0, 7); ctx.fill();
   ctx.strokeStyle = 'rgba(0,0,0,.35)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(0, 0, r, 0, 7); ctx.stroke();
   ctx.restore();
+}
+
+function drawPreview() {
+  const pc = $('#hero-preview'); if (!pc) return;
+  const pctx = pc.getContext('2d'), r = 26;
+  pctx.clearRect(0, 0, pc.width, pc.height); pctx.save(); pctx.translate(pc.width / 2, pc.height / 2 + 14);
+  pctx.fillStyle = 'rgba(0,0,0,.3)'; pctx.beginPath(); pctx.ellipse(0, r * .2, r * 1.1, r * .45, 0, 0, 7); pctx.fill();
+  pctx.translate(0, -r * .9);
+  pctx.fillStyle = save.kit; pctx.beginPath(); pctx.ellipse(0, 0, r, r * .85, 0, 0, 7); pctx.fill();
+  pctx.strokeStyle = save.kit; pctx.lineWidth = r * .35; pctx.lineCap = 'round'; pctx.beginPath(); pctx.moveTo(-r * .8, 0); pctx.lineTo(-r * 1.2, r * .35); pctx.moveTo(r * .8, 0); pctx.lineTo(r * 1.2, r * .35); pctx.stroke();
+  pctx.fillStyle = save.skin; pctx.beginPath(); pctx.arc(0, -r * .55, r * .5, 0, 7); pctx.fill();
+  pctx.fillStyle = save.hair; pctx.beginPath(); pctx.arc(0, -r * .62, r * .5, Math.PI, 0); pctx.fill();
+  pctx.fillStyle = '#fff'; pctx.font = `bold ${r * .8}px Tajawal, sans-serif`; pctx.textAlign = 'center'; pctx.textBaseline = 'middle'; pctx.fillText('10', 0, r * .15);
+  pctx.restore();
 }
 
 /* ============ تشغيل ============ */

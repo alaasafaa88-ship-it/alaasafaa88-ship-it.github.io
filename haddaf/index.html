@@ -38,12 +38,16 @@
       <div class="home__stats">
         <div><b id="home-points">0</b><span>نقطة</span></div>
         <div><b id="home-stars">0</b><span>نجمة</span></div>
+        <div><b id="home-cash">0</b><span>💰 نقود</span></div>
         <div><b id="home-level">1</b><span>المستوى</span></div>
       </div>
     </div>
     <div class="home__actions">
       <button class="btn btn--big" id="btn-play" type="button">▶ العب</button>
-      <button class="btn btn--ghost" id="btn-levels" type="button">المستويات</button>
+      <div class="home__row">
+        <button class="btn btn--ghost" id="btn-levels" type="button">المستويات</button>
+        <button class="btn btn--ghost" id="btn-stats" type="button">🏆 الإحصاءات</button>
+      </div>
     </div>
     <p class="home__foot">يعمل بدون إنترنت • تقدّمك محفوظ على جهازك</p>
   </section>
@@ -70,9 +74,18 @@
         <span>اسم البطل</span>
         <input class="input" id="set-name" maxlength="16" placeholder="اكتب اسمك">
       </label>
+      <canvas class="hero-preview" id="hero-preview" width="120" height="120" aria-hidden="true"></canvas>
       <div class="field">
         <span>لون القميص</span>
         <div class="kits" id="set-kits"></div>
+      </div>
+      <div class="field">
+        <span>لون البشرة</span>
+        <div class="kits" id="set-skins"></div>
+      </div>
+      <div class="field">
+        <span>لون الشعر</span>
+        <div class="kits" id="set-hairs"></div>
       </div>
       <label class="field field--row">
         <span>الأصوات</span>
@@ -87,6 +100,20 @@
     </div>
   </section>
 
+  <!-- الإحصاءات والكؤوس -->
+  <section class="screen screen--stats" id="screen-stats" hidden>
+    <header class="topbar">
+      <button class="iconbtn" data-nav="home" type="button" aria-label="رجوع">→</button>
+      <h2>الإحصاءات والكؤوس</h2>
+      <span></span>
+    </header>
+    <div class="stats">
+      <p class="stats__rate" id="stats-rate"></p>
+      <div class="trophies" id="stats-trophies"></div>
+      <ul class="stats__list" id="stats-list"></ul>
+    </div>
+  </section>
+
   <!-- اللعب -->
   <section class="screen screen--play" id="screen-play" hidden>
     <canvas id="pitch"></canvas>
@@ -96,6 +123,7 @@
       <div class="hud__touches" id="hud-touches" title="اللمسات"></div>
       <div class="hearts hearts--small" id="hearts-play"></div>
     </div>
+    <div class="scoreboard" id="scoreboard"></div>
     <div class="hint" id="hint" hidden></div>
     <div class="meter" id="meter" hidden>
       <div class="meter__bar"><i id="meter-power"></i></div>
