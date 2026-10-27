@@ -3,20 +3,26 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>بيتي 5D — مصمم المنازل والديكور ثلاثي الأبعاد</title>
+<title>عمران — صمّم بيتك ثلاثي الأبعاد بالعربي</title>
 <meta name="description" content="صمّم منزلك بالعربي: مخطط ثنائي الأبعاد، عرض ثلاثي الأبعاد، كتالوج أثاث ضخم، ومصمم ذكي يؤثث الغرف ويولّد المخططات تلقائياً.">
-<meta name="theme-color" content="#1f8a5b">
+<meta name="theme-color" content="#a5431c">
+<meta property="og:title" content="عمران — صمّم بيتك ثلاثي الأبعاد بالعربي">
+<meta property="og:description" content="مخطط 2D وعرض 3D وكتالوج كامل مجاني ومصمم ذكي، بلا حساب وبدون إنترنت.">
+<meta property="og:image" content="assets/landing-shot.png">
+<meta property="og:type" content="website">
+
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="assets/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/tokens.css">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 <div id="app">
   <header id="topbar">
-    <div class="brand" id="brand"><span class="logo">5d</span><span class="brand-name">بيتي</span></div>
+    <div class="brand" id="brand" title="عمران"><span class="logo"><svg viewBox="0 0 512 512" aria-hidden="true"><path d="M128 400V236c0-70 57-128 128-128s128 58 128 128v164" fill="none" stroke="#fff" stroke-width="40" stroke-linecap="round"/><path d="M96 400h320" stroke="#fff" stroke-width="36" stroke-linecap="round"/></svg></span><span class="brand-name">عمران</span></div>
     <input id="projName" class="proj-name" value="مشروع جديد" title="اسم المشروع" aria-label="اسم المشروع">
     <div class="tb-group">
       <button class="tb" id="btnUndo" title="تراجع (Ctrl+Z)">↶</button>
@@ -49,7 +55,8 @@
         <div class="search-row"><input id="catSearch" placeholder="ابحث عن قطعة أثاث… (مثال: سرير، ثلاجة)" aria-label="بحث"><span class="count" id="catCount"></span></div>
         <div class="chips" id="catChips"></div>
         <div class="items-grid" id="catItems"></div>
-        <p class="hint">اضغط على القطعة ثم اضغط في المخطط لوضعها. اضغط «+» لإضافتها في وسط الشاشة مباشرة.</p>
+        <div class="custom-row"><button class="tb" id="btnCustomItem">➕ قطعة مخصصة بأبعادك</button></div>
+        <p class="hint">اضغط على القطعة ثم اضغط في المخطط لوضعها. اضغط «+» لإضافتها في وسط الشاشة مباشرة. لم تجد قطعتك؟ أنشئها بأبعادها الحقيقية من «قطعة مخصصة».</p>
       </div>
       <div class="tab-body" id="tab-tools" hidden>
         <h4>أدوات الرسم</h4>
@@ -75,7 +82,7 @@
         <label class="check"><input type="checkbox" id="chkKeep"> وضع متكرر (إبقاء أداة الوضع بعد كل قطعة)</label>
         <h4>اختصارات</h4>
         <ul class="shortcuts">
-          <li><kbd>R</kbd> تدوير 90° &nbsp; <kbd>Shift+R</kbd> 45°</li><li><kbd>Delete</kbd> حذف المحدد</li><li><kbd>Ctrl+D</kbd> نسخ المحدد</li><li><kbd>الأسهم</kbd> تحريك دقيق</li><li><kbd>Esc</kbd> إلغاء الأداة</li><li>عجلة الماوس: تكبير · زر الماوس الأوسط/الأيمن: تحريك</li>
+          <li><kbd>R</kbd> تدوير 90° &nbsp; <kbd>Shift+R</kbd> 45°</li><li><kbd>Delete</kbd> حذف المحدد</li><li><kbd>Ctrl+D</kbd> نسخ المحدد</li><li><kbd>Ctrl+C</kbd> / <kbd>Ctrl+V</kbd> نسخ ولصق (حتى بين المشاريع)</li><li><kbd>الأسهم</kbd> تحريك دقيق</li><li><kbd>Esc</kbd> إلغاء الأداة</li><li>عجلة الماوس: تكبير · زر الماوس الأوسط/الأيمن: تحريك</li>
         </ul>
       </div>
       <div class="tab-body" id="tab-materials" hidden>
@@ -96,7 +103,7 @@
         <h4>البيانات</h4>
         <div class="row"><button class="tb" id="btnClearItems">🧹 حذف كل الأثاث</button><button class="tb danger" id="btnClearAll">🗑️ مسح المشروع</button></div>
         <p class="hint">تُحفظ مشاريعك محلياً في متصفحك (لا تُرفع لأي خادم). استخدم «تصدير JSON» لنسخة احتياطية.</p>
-        <p class="hint">بيتي 5D — الإصدار 1.0 · مفتوح المصدر</p>
+        <p class="hint">عمران — الإصدار 1.0 · مجاني ومفتوح المصدر · <a href="landing.html">عن التطبيق</a> · <a href="privacy.html">الخصوصية</a></p>
       </div>
     </aside>
 
@@ -153,7 +160,7 @@
 <!-- النوافذ المنبثقة -->
 <div class="modal" id="mProjects" hidden>
   <div class="modal-box wide">
-    <div class="modal-head"><h3>🏠 بيتي 5D — مشاريعك</h3><button class="close" data-close>✕</button></div>
+    <div class="modal-head"><h3>🏠 عمران — مشاريعك</h3><button class="close" data-close>✕</button></div>
     <div class="tabs small"><button data-mtab="new" class="active">➕ مشروع جديد</button><button data-mtab="saved">📁 المحفوظة</button></div>
     <div id="mtab-new">
       <p class="hint">اختر قالباً جاهزاً (يُولَّد ويُؤثَّث تلقائياً) أو ابدأ من مشروع فارغ.</p>
@@ -162,6 +169,7 @@
     <div id="mtab-saved" hidden>
       <div class="row"><button class="tb" id="btnImport">📥 استيراد ملف JSON</button><input type="file" id="fileImport" accept=".json,application/json" hidden></div>
       <div class="saved-list" id="savedList"></div>
+      <h4>🕘 النسخ السابقة (تُحفظ تلقائياً)</h4><p class="hint">آخر 6 نسخ من عملك، لتستعيد أي شيء ضاع أو تراجع.</p><div class="hist-list" id="histList"></div>
     </div>
   </div>
 </div>
@@ -229,12 +237,12 @@
 
 <div class="modal" id="mHelp" hidden>
   <div class="modal-box wide">
-    <div class="modal-head"><h3>❓ كيف أستخدم بيتي 5D؟</h3><button class="close" data-close>✕</button></div>
+    <div class="modal-head"><h3>❓ كيف أستخدم عمران؟</h3><button class="close" data-close>✕</button></div>
     <ol class="help-steps">
       <li><b>ابدأ:</b> من «مشاريعي» اختر قالباً جاهزاً، أو مشروعاً فارغاً، أو اطلب من المصمم الذكي توليد مخطط («صمّم لي شقة غرفتين»).</li>
       <li><b>ارسم الغرف:</b> أداة «غرفة» ▭ واسحب مستطيلاً. تُنشأ الجدران تلقائياً. أداة «جدار» ━ لرسم جدران حرة نقطة فنقطة (نقر مزدوج للإنهاء).</li>
       <li><b>الأبواب والنوافذ:</b> اختر الأداة ثم اضغط على أي جدار. غيّر النوع والعرض من لوحة الخصائص.</li>
-      <li><b>الأثاث:</b> من الكتالوج (215 قطعة في 15 فئة) اضغط القطعة ثم اضغط في المخطط. اسحب للتحريك، والمقبض ↻ للتدوير، و<kbd>R</kbd> للتدوير السريع.</li>
+      <li><b>الأثاث:</b> من الكتالوج (215 قطعة في 15 فئة، أو قطعة مخصصة بأبعادك) اضغط القطعة ثم اضغط في المخطط. اسحب للتحريك، والمقبض ↻ للتدوير، و<kbd>R</kbd> للتدوير السريع.</li>
       <li><b>المواد:</b> حدّد غرفة ثم اختر أرضية ودهاناً من تبويب «المواد». لون كل قطعة قابل للتغيير من الخصائص.</li>
       <li><b>3D:</b> زر «عرض 3D»: اسحب للدوران، عجلة الماوس للتقريب، «تجوّل» للمشي داخل المنزل (W A S D أو الأزرار)، «ليل» لرؤية الإضاءة.</li>
       <li><b>المصمم الذكي:</b> يؤثث الغرف حسب نوعها ونمطك، يقترح الألوان، يقدّر التكلفة، ويحلل التصميم. يعمل بالكامل داخل متصفحك.</li>
@@ -244,7 +252,21 @@
 </div>
 
 <div class="modal" id="mShot" hidden>
-  <div class="modal-box"><div class="modal-head"><h3>📷 الصورة</h3><button class="close" data-close>✕</button></div><img id="shotImg" alt="لقطة"><a class="tb primary full" id="shotDl" download="baity5d.png">⬇ تنزيل الصورة</a></div>
+  <div class="modal-box"><div class="modal-head"><h3>📷 الصورة</h3><button class="close" data-close>✕</button></div><img id="shotImg" alt="لقطة"><a class="tb primary full" id="shotDl" download="omran.png">⬇ تنزيل الصورة</a></div>
+</div>
+
+<div class="modal" id="mCustom" hidden>
+  <div class="modal-box">
+    <div class="modal-head"><h3>➕ قطعة مخصصة</h3><button class="close" data-close>✕</button></div>
+    <p class="hint">أنشئ قطعة بأبعاد قطعتك الحقيقية (كنبة ورثتها، خزانة مقاسة…). تُحفظ مع المشروع وتظهر في فئة «قطعي».</p>
+    <form id="customForm">
+      <label class="field">الاسم<input name="n" required maxlength="40" placeholder="مثال: كنبة الصالة القديمة"></label>
+      <div class="grid3"><label class="field">العرض (م)<input name="w" type="number" step="any" min="0.05" max="20" value="1.2" required></label><label class="field">العمق (م)<input name="d" type="number" step="any" min="0.05" max="20" value="0.6" required></label><label class="field">الارتفاع (م)<input name="h" type="number" step="any" min="0.02" max="10" value="0.8" required></label></div>
+      <div class="grid2"><label class="field">الشكل<select name="kind"><option value="generic">صندوق</option><option value="column">أسطوانة</option><option value="cabinet">خزانة بأبواب</option><option value="table">طاولة</option><option value="shelf">لوح رفيع</option><option value="sofa">كنبة</option><option value="bed">سرير</option></select></label><label class="field">التثبيت<select name="mount"><option value="floor">على الأرض</option><option value="wall">على الجدار</option><option value="ceiling">في السقف</option></select></label></div>
+      <div class="grid2"><label class="field">اللون<input name="c" type="color" value="#a8784f"></label><label class="field">السعر التقديري<input name="price" type="number" min="0" step="1" value="0"></label></div>
+      <button type="submit" class="tb primary full">إنشاء ووضع في المخطط</button>
+    </form>
+  </div>
 </div>
 
 <div id="toast" hidden></div>

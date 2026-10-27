@@ -43,7 +43,7 @@
 
     build() {
       const P = this.project, d = P.d, S = d.settings; this.clear();
-      const extMat = this.mat(S.exteriorColor || '#e5ded2');
+      const extMat = this.mat(S.exteriorColor || '#e6dfd2');
       // الأرضيات والأسقف
       d.rooms.forEach(r => {
         const tex = this.floorTexture(r.floor); const m = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.6 }); m.map = tex.clone(); m.map.needsUpdate = true; m.map.repeat.set(r.w, r.h);

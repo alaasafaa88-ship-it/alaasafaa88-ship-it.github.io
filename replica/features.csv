@@ -1,0 +1,63 @@
+feature,area,priority,original,clone,notes
+رسم غرفة بالسحب مع جدران تلقائية,editor,must,yes,yes,F02
+رسم جدران حرة نقطة فنقطة مع محاذاة الزوايا,editor,must,yes,yes,
+أبواب ونوافذ تُوضع على الجدران وتُحرَّك عليها,editor,must,yes,yes,9 أنواع
+تغيير سماكة وارتفاع الجدران,editor,must,yes,yes,
+تحريك وتدوير وتكرار وحذف القطع,editor,must,yes,yes,مقبض تدوير + اختصارات
+تغيير أبعاد القطعة ولونها,editor,must,yes,yes,لونان لكل قطعة
+كتالوج أثاث مصنّف مع بحث,catalog,must,yes,yes,215 قطعة / 15 فئة (الأصلي 6800+ لكن 50% مقفل مجاناً)
+قطع جدارية وسقفية بارتفاع قابل للتعديل,catalog,must,yes,yes,mount wall/ceiling
+مواد الأرضيات ودهانات الجدران,materials,must,yes,yes,20 أرضية / 23 دهان + مخصص
+عرض ثلاثي الأبعاد بالدوران والتقريب,3d,must,yes,yes,Three.js
+تجوّل بمنظور الشخص الأول,3d,must,yes,yes,الأصلي: 360 walkthrough مدفوع
+أبواب ونوافذ مجسّمة بفتحات حقيقية في الجدران,3d,must,yes,yes,
+حفظ المشاريع وفتحها,projects,must,yes,yes,محلي localStorage + صور مصغرة
+تراجع وإعادة,editor,must,yes,yes,60 خطوة
+قوالب ومشاريع جاهزة,projects,must,yes,yes,7 قوالب
+مساحة الغرف وأبعاد الجدران على المخطط,editor,must,yes,yes,
+أداة قياس المسافات,editor,must,yes,yes,
+تسمية الغرف وأنواعها,editor,must,yes,yes,17 نوعاً
+لقطة صورة من العرض 3D (Snapshot),export,must,yes,yes,WebGL وليس رندر فوتوغرافي
+تصدير صورة المخطط 2D,export,must,yes,yes,PNG
+واجهة جوال تعمل باللمس (تكبير بإصبعين),mobile,must,yes,yes,PWA
+شبكة ومحاذاة تلقائية,editor,must,yes,yes,
+إظهار/إخفاء الأسقف,3d,must,yes,yes,
+إضاءة نهار/ليل,3d,must,yes,yes,الأصلي: إعدادات إضاءة في الرندر
+مصمم ذكي: تأثيث غرفة تلقائياً حسب النمط,ai,should,yes,yes,AI Designer / Smart Wizard
+مصمم ذكي: توليد مخطط كامل من معايير,ai,should,yes,yes,Design Generator
+مكتبة أنماط (Styles) تُطبَّق على الغرف,ai,should,yes,yes,10 أنماط
+طوابق متعددة,editor,should,yes,no,الأصلي يدعم floors؛ غير مبني بعد
+رندر فوتوغرافي عالي الجودة,3d,should,yes,partial,لقطة WebGL بظلال؛ لا path tracing
+تقرير PDF للمشروع,export,should,yes,partial,طباعة المتصفح إلى PDF
+مشاركة المشروع برابط,sharing,should,yes,yes,الرابط يحمل المشروع كاملاً
+تصميم خارجي (حديقة ومسبح وأشجار),catalog,should,yes,yes,فئة الحديقة والخارج
+تخصيص القطعة بمواد/قوام بدل اللون فقط,catalog,should,yes,partial,لونان فقط
+نسخ ولصق بين المشاريع,editor,should,yes,yes,Ctrl+C / Ctrl+V عبر حافظة محلية تحمل القطعة المخصصة أيضاً
+قفل القطع ومنع تحريكها,editor,should,yes,yes,خانة قفل في الخصائص + شارة على المخطط
+حساب مستخدم ومزامنة سحابية,account,should,yes,no,غير مطلوب للعمل؛ انظر architecture.md
+دعم لغات متعددة,i18n,should,yes,partial,عربي فقط
+جدران منحنية أو مضلعة,editor,could,yes,no,
+تصدير DWG/DXF,export,could,yes,no,Professional في الأصلي
+تعاون حي وتعليقات,sharing,could,yes,no,يحتاج خادماً
+أسقف مائلة وأسطح,editor,could,yes,no,
+استيراد مخطط من صورة والتعرّف عليه,ai,could,yes,no,نموذج رؤية حاسوبية خاص بالأصلي
+مكتبة ألوان RAL/دهانات تجارية,materials,could,yes,no,
+واجهة سطح مكتب (Windows/Mac),platforms,could,yes,partial,PWA قابل للتثبيت
+معرض مجتمع ومشاريع عامة,community,could,yes,skip,شبكة الأصلي ومستخدموه
+Scan Room بالليدار,ai,could,yes,skip,عتاد وSDK خاص بـ Apple
+موديلات الكتالوج الأصلية (الأشكال والقوام),catalog,must,yes,skip,مرخّصة لهم؛ موديلاتنا مبنية برمجياً
+قائمة انتظار رندر سحابي,3d,should,yes,skip,خدمة خوادم مدفوعة
+إعلانات داخل التطبيق,monetisation,could,yes,skip,لن نبنيها عمداً
+العلامة التجارية والأيقونة,brand,must,yes,skip,هوية خاصة بنا (انظر brand.md)
+يعمل بدون إنترنت بعد أول زيارة,platforms,must,no,yes,إضافة: الأصلي يحتاج اتصالاً
+الكتالوج كله مجاني بلا قفل,catalog,must,no,yes,إضافة: الأصلي يقفل 50%
+بلا إعلانات وبلا اشتراك,monetisation,must,no,yes,إضافة
+واجهة عربية RTL كاملة مع مجلس عربي وجلسات أرضية,i18n,must,no,yes,إضافة
+تقدير التكلفة (أثاث + أرضيات + جدران + دهان),ai,should,no,yes,إضافة
+تحليل التصميم ونصائح,ai,should,no,yes,إضافة
+مساعد محادثة بالعربي يعمل محلياً,ai,should,no,yes,إضافة
+تصدير قائمة الأثاث CSV,export,should,no,yes,إضافة
+حفظ تلقائي بلا حساب,projects,must,no,yes,إضافة: يعالج شكوى فقدان التقدم
+قطعة مخصصة بأبعاد المستخدم تُحفظ مع المشروع,catalog,should,no,yes,إصلاح من المراجعات: طلب إضافة أثاث خاص
+نسخ سابقة تلقائية (آخر 6) مع استعادة بنقرة,projects,should,no,yes,إصلاح من المراجعات: ضياع العمل
+صفحة هبوط تشرح كيف يعمل + مساعدة داخل التطبيق,docs,should,no,yes,إصلاح: لا توثيق

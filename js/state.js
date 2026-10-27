@@ -40,8 +40,8 @@
   function blank(name) {
     return {
       version: 1, name: name || 'مشروع جديد', created: Date.now(), updated: Date.now(),
-      settings: { wallHeight: 2.8, wallThickness: 0.2, currency: '$', showCeiling: false, exteriorColor: '#e5ded2' },
-      rooms: [], walls: [], openings: [], items: []
+      settings: { wallHeight: 2.8, wallThickness: 0.2, currency: '$', showCeiling: false, exteriorColor: '#e6dfd2' },
+      rooms: [], walls: [], openings: [], items: [], customDefs: []
     };
   }
 
@@ -53,7 +53,8 @@
     snapshot() { this.undo.push(JSON.stringify(this.data)); if (this.undo.length > 60) this.undo.shift(); this.redo = []; }
     doUndo() { if (!this.undo.length) return false; this.redo.push(JSON.stringify(this.data)); this.data = JSON.parse(this.undo.pop()); this.emit('undo'); return true; }
     doRedo() { if (!this.redo.length) return false; this.undo.push(JSON.stringify(this.data)); this.data = JSON.parse(this.redo.pop()); this.emit('redo'); return true; }
-    load(data) { this.data = Object.assign(blank(), data); this.data.settings = Object.assign(blank().settings, data.settings || {}); this.undo = []; this.redo = []; this.emit('load'); }
+    load(data) { this.data = Object.assign(blank(), data); this.data.settings = Object.assign(blank().settings, data.settings || {}); if (!Array.isArray(this.data.customDefs)) this.data.customDefs = []; this.data.customDefs.forEach(d => CATALOG.register(d)); this.undo = []; this.redo = []; this.emit('load'); }
+    addCustomDef(def) { def.id = def.id || uid('custom_'); CATALOG.register(def); this.data.customDefs.push(def); return def; }
 
     // ---- الجدران ----
     addWall(x1, y1, x2, y2, opts) {
@@ -138,7 +139,7 @@
   function near(a, b) { return Math.abs(a - b) < 0.02; }
 
   // ---- التخزين المحلي ----
-  const KEY = 'baity5d_projects';
+  const KEY = 'omran_projects'; const HKEY = 'omran_history'; const HMAX = 6;
   const Store = {
     list() { try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e) { return []; } },
     save(project, thumb) {
@@ -150,6 +151,9 @@
     },
     get(pid) { return Store.list().find(p => p.pid === pid) || null; },
     remove(pid) { localStorage.setItem(KEY, JSON.stringify(Store.list().filter(p => p.pid !== pid))); },
+    // النسخ السابقة: تعالج شكوى "ضاع عملي / تراجعت تعديلاتي" — آخر HMAX نسخ بغض النظر عن المشروع
+    history() { try { return JSON.parse(localStorage.getItem(HKEY) || '[]'); } catch (e) { return []; } },
+    pushHistory(data, reason) { const h = Store.history(); const last = h[0]; const json = JSON.stringify(data); if (last && last.json === json) return false; h.unshift({ t: Date.now(), name: data.name, reason: reason || 'auto', items: (data.items || []).length, rooms: (data.rooms || []).length, json }); while (h.length > HMAX) h.pop(); try { localStorage.setItem(HKEY, JSON.stringify(h)); return true; } catch (e) { return false; } },
   };
 
   global.STATE = { Project, Store, blank, uid, ROOM_TYPES, OPENING_TYPES, roomType: id => ROOM_TYPES.find(r => r.id === id) || ROOM_TYPES[ROOM_TYPES.length - 1], openingType: id => OPENING_TYPES.find(o => o.id === id) || OPENING_TYPES[0] };

@@ -1,5 +1,5 @@
 /* =========================================================
-   كتالوج الموديلات — بيتي 5D
+   كتالوج الموديلات — عمران
    كل عنصر: id, n (الاسم), cat (الفئة), kind (شكل البناء ثلاثي الأبعاد),
    w/d/h (العرض/العمق/الارتفاع بالمتر), c (اللون الأساسي), c2 (لون ثانوي),
    price (سعر تقديري بالدولار), mount (floor | wall | ceiling), elev (الارتفاع عن الأرض)
@@ -23,6 +23,7 @@
     { id: 'structure',  n: 'عناصر إنشائية',       icon: '🏛️' },
     { id: 'outdoor',    n: 'الحديقة والخارج',     icon: '🌳' },
     { id: 'sports',     n: 'الرياضة والترفيه',    icon: '🏋️' },
+    { id: 'custom',     n: 'قطعي المخصصة',        icon: '➕' },
   ];
 
   // الألوان المساعدة
@@ -30,7 +31,7 @@
     wood: '#a8784f', darkwood: '#5b3a29', lightwood: '#d9b68c', white: '#f3f3f1',
     offwhite: '#e9e6df', black: '#232323', metal: '#9aa0a6', steel: '#c9ccd1',
     glass: '#9ad0ec', fabric: '#6f8fa8', leather: '#7a4a2a', grey: '#8c8c8c',
-    beige: '#d9cbb3', green: '#4f8a3a', darkgreen: '#2f5d2a', terracotta: '#b5623a',
+    beige: '#d9cbb3', green: '#4f8a3a', darkgreen: '#2f5e2a', terracotta: '#b5623a',
     blue: '#3b6fb6', red: '#b23a3a', gold: '#c9a227', marble: '#e7e4dd', navy: '#2d3b55'
   };
 
@@ -407,7 +408,7 @@
     // ------ الديكور والنباتات ------
     I('plant_small', 'نبتة صغيرة', 'decor', 'plant', 0.3, 0.3, 0.5, '#4f8a3a', 20, { c2: '#b5623a' }),
     I('plant_med', 'نبتة متوسطة', 'decor', 'plant', 0.5, 0.5, 1.1, '#4f8a3a', 45, { c2: '#e9e6df' }),
-    I('plant_big', 'نبتة كبيرة (مونستيرا)', 'decor', 'plant', 0.8, 0.8, 1.7, '#2f5d2a', 90, { c2: '#3d3d3d' }),
+    I('plant_big', 'نبتة كبيرة (مونستيرا)', 'decor', 'plant', 0.8, 0.8, 1.7, '#2f5e2a', 90, { c2: '#3d3d3d' }),
     I('palm_indoor', 'نخلة داخلية', 'decor', 'palm', 1.0, 1.0, 1.9, '#4f8a3a', 120),
     I('painting_s', 'لوحة صغيرة', 'decor', 'painting', 0.5, 0.03, 0.4, '#6f8fa8', 40, { mount: 'wall', elev: 1.4, c2: '#c9a227' }),
     I('painting_m', 'لوحة متوسطة', 'decor', 'painting', 0.9, 0.03, 0.7, '#2d6a4f', 80, { mount: 'wall', elev: 1.3, c2: '#f2b134' }),
@@ -453,7 +454,7 @@
     I('skylight', 'فتحة سقف (سكاي لايت)', 'structure', 'shelf', 1.2, 1.2, 0.05, '#9ad0ec', 900, { mount: 'ceiling' }),
 
     // ------ الحديقة والخارج ------
-    I('tree', 'شجرة', 'outdoor', 'tree', 2.5, 2.5, 4.0, '#2f5d2a', 150),
+    I('tree', 'شجرة', 'outdoor', 'tree', 2.5, 2.5, 4.0, '#2f5e2a', 150),
     I('tree_small', 'شجرة صغيرة', 'outdoor', 'tree', 1.5, 1.5, 2.5, '#4f8a3a', 80),
     I('palm_tree', 'نخلة', 'outdoor', 'palm', 3.0, 3.0, 5.0, '#4f8a3a', 400),
     I('bush', 'شجيرة', 'outdoor', 'bush', 0.8, 0.8, 0.7, '#4f8a3a', 25),
@@ -500,5 +501,9 @@
 
   const BY_ID = {}; ITEMS.forEach(it => { BY_ID[it.id] = it; });
 
-  global.CATALOG = { CATEGORIES, ITEMS, BY_ID, BUILD, COL, shade };
+  function register(def) { // قطعة مخصصة من المستخدم (تُحفظ مع المشروع)
+    if (!def || !def.id) return null; def = Object.assign({ cat: 'custom', kind: 'generic', mount: 'floor', elev: 0, price: 0, custom: true }, def);
+    if (!BUILD[def.kind]) def.kind = 'generic'; if (!BY_ID[def.id]) ITEMS.push(def); BY_ID[def.id] = def; return def;
+  }
+  global.CATALOG = { CATEGORIES, ITEMS, BY_ID, BUILD, COL, shade, register };
 })(window);

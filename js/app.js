@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   const $ = s => document.querySelector(s), $$ = s => Array.from(document.querySelectorAll(s));
-  const AUTOSAVE = 'baity5d_autosave';
+  const AUTOSAVE = 'omran_autosave'; const CLIP = 'omran_clipboard';
   const P = new STATE.Project();
   const app = { keepPlacing: false, style: 'modern', selected: null, mode: '2d', view3d: null, dirty3d: true };
   let editor;
@@ -11,7 +11,13 @@
   function toast(msg, ms) { const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(t._t); t._t = setTimeout(() => { t.hidden = true; }, ms || 2200); }
   function openModal(id) { $(id).hidden = false; }
   function closeModals() { $$('.modal').forEach(m => { m.hidden = true; }); }
-  function download(name, dataUrl) { const a = document.createElement('a'); a.href = dataUrl; a.download = name; document.body.appendChild(a); a.click(); a.remove(); }
+  // اسم ملف ASCII آمن: بعض المتصفحات تُسقط الأسماء العربية وتسمي الملف "download"
+  function fileName(ext) { const d = new Date(); const pad = n => String(n).padStart(2, '0'); return `omran-${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}.${ext}`; }
+  function download(name, dataUrl) {
+    const a = document.createElement('a'); a.download = name;
+    if (dataUrl.startsWith('data:') && !dataUrl.startsWith('data:image')) { const [head, body] = dataUrl.split(','); const mime = head.slice(5).split(';')[0]; const blob = new Blob([decodeURIComponent(body)], { type: mime }); a.href = URL.createObjectURL(blob); } else a.href = dataUrl;
+    document.body.appendChild(a); a.click(); a.remove(); if (a.href.startsWith('blob:')) setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  }
   function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
   const fmt = n => Math.round(n).toLocaleString('en-US');
 
@@ -32,7 +38,8 @@
   function renderCatalog() {
     const chips = $('#catChips'); chips.innerHTML = `<button class="chip ${catFilter === 'all' ? 'active' : ''}" data-cat="all">الكل</button>` + CATALOG.CATEGORIES.map(c => `<button class="chip ${catFilter === c.id ? 'active' : ''}" data-cat="${c.id}">${c.icon} ${c.n}</button>`).join('');
     chips.querySelectorAll('.chip').forEach(b => b.onclick = () => { catFilter = b.dataset.cat; renderCatalog(); });
-    const list = CATALOG.ITEMS.filter(i => (catFilter === 'all' || i.cat === catFilter) && (!catQuery || i.n.includes(catQuery) || (CATALOG.CATEGORIES.find(c => c.id === i.cat) || {}).n.includes(catQuery)));
+    const mine = new Set((P.d.customDefs || []).map(d => d.id));
+    const list = CATALOG.ITEMS.filter(i => (!i.custom || mine.has(i.id)) && (catFilter === 'all' || i.cat === catFilter) && (!catQuery || i.n.includes(catQuery) || (CATALOG.CATEGORIES.find(c => c.id === i.cat) || {}).n.includes(catQuery)));
     $('#catCount').textContent = list.length + ' قطعة';
     const grid = $('#catItems'); grid.innerHTML = '';
     list.forEach(def => {
@@ -87,12 +94,14 @@
         <div class="grid3">${num('w', 'العرض', o.w.toFixed(2), 0.05, 0.05)}${num('d', 'العمق', o.d.toFixed(2), 0.05, 0.05)}${num('h', 'الارتفاع', o.h.toFixed(2), 0.05, 0.02)}</div>
         ${def.mount !== 'ceiling' ? num('elev', 'الارتفاع عن الأرض (م)', (o.elev || 0).toFixed(2), 0.05, 0) : ''}
         <div class="grid2"><label class="field">اللون الأساسي<input type="color" name="c" value="${o.c || def.c}"></label>${def.c2 ? `<label class="field">اللون الثانوي<input type="color" name="c2" value="${o.c2 || def.c2}"></label>` : ''}</div>
-        <div class="prop-actions"><button class="tb" data-act="rot90">↻ 90°</button><button class="tb" data-act="flip">⇄ قلب</button><button class="tb" data-act="dup">⧉ نسخ</button><button class="tb" data-act="reset">↺ الأبعاد الأصلية</button><button class="tb danger" data-act="del">🗑️ حذف</button></div>`;
+        <label class="check"><input type="checkbox" name="locked" ${o.locked ? 'checked' : ''}> 🔒 قفل القطعة (لا تتحرك ولا تدور بالخطأ)</label>
+        <div class="prop-actions"><button class="tb" data-act="rot90">↻ 90°</button><button class="tb" data-act="flip">⇄ قلب</button><button class="tb" data-act="dup">⧉ نسخ</button><button class="tb" data-act="copy">📋 نسخ للحافظة</button><button class="tb" data-act="reset">↺ الأبعاد الأصلية</button><button class="tb danger" data-act="del">🗑️ حذف</button></div>`;
       const upd = (fn) => { P.snapshot(); fn(); P.emit('change'); };
-      body.querySelectorAll('input').forEach(inp => inp.addEventListener('input', () => { const n = inp.name, v = inp.value; if (n === 'c' || n === 'c2') { o[n] = v; P.emit('change'); return; } const f = parseFloat(v); if (isNaN(f)) return; if (n === 'rot' || n === 'rotn') { o.rot = ((f % 360) + 360) % 360; body.querySelector('[name=rot]').value = o.rot; body.querySelector('[name=rotn]').value = Math.round(o.rot); } else o[n] = f; P.emit('change'); }));
+      body.querySelectorAll('input').forEach(inp => inp.addEventListener('input', () => { const n = inp.name, v = inp.value; if (n === 'locked') { o.locked = inp.checked; P.emit('change'); return; } if (n === 'c' || n === 'c2') { o[n] = v; P.emit('change'); return; } const f = parseFloat(v); if (isNaN(f)) return; if (n === 'rot' || n === 'rotn') { o.rot = ((f % 360) + 360) % 360; body.querySelector('[name=rot]').value = o.rot; body.querySelector('[name=rotn]').value = Math.round(o.rot); } else o[n] = f; P.emit('change'); }));
       body.querySelectorAll('input').forEach(inp => inp.addEventListener('focus', () => P.snapshot()));
       body.querySelector('[data-act=rot90]').onclick = () => upd(() => { o.rot = (o.rot + 90) % 360; });
       body.querySelector('[data-act=flip]').onclick = () => upd(() => { o.rot = (o.rot + 180) % 360; });
+      body.querySelector('[data-act=copy]').onclick = () => { copyItem(o); toast('نُسخت القطعة — Ctrl+V للصق هنا أو في مشروع آخر'); };
       body.querySelector('[data-act=dup]').onclick = () => upd(() => { const c = P.addItem(o.defId, o.x + 0.3, o.y + 0.3, o.rot, { w: o.w, d: o.d, h: o.h, c: o.c, c2: o.c2, elev: o.elev }); editor.select(c.id); });
       body.querySelector('[data-act=reset]').onclick = () => upd(() => { o.w = def.w; o.d = def.d; o.h = def.h; o.c = def.c; o.c2 = def.c2 || null; renderProps(); });
       body.querySelector('[data-act=del]').onclick = () => upd(() => { P.remove(o.id); editor.select(null); });
@@ -170,18 +179,21 @@
     if (app.mode === '3d' && app.view3d) { clearTimeout(build3dT); build3dT = setTimeout(() => app.view3d.build(), 120); } else app.dirty3d = true;
     $('#stInfo').textContent = `المساحة: ${P.totalArea().toFixed(1)} م² · ${P.d.items.length} قطعة`;
     $('#btnUndo').disabled = !P.undo.length; $('#btnRedo').disabled = !P.redo.length;
-    clearTimeout(autosaveT); autosaveT = setTimeout(() => { try { localStorage.setItem(AUTOSAVE, JSON.stringify(P.d)); } catch (e) { } }, 800);
+    clearTimeout(autosaveT); autosaveT = setTimeout(() => { try { localStorage.setItem(AUTOSAVE, JSON.stringify(P.d)); const h = STATE.Store.history(); if (!h[0] || Date.now() - h[0].t > 120000) STATE.Store.pushHistory(P.d, 'auto'); } catch (e) { } }, 800);
   });
   function readSettings() { const s = P.d.settings; $('#setWallH').value = s.wallHeight; $('#setWallT').value = s.wallThickness; $('#setExt').value = s.exteriorColor; $('#setCur').value = s.currency; $('#setCeiling').checked = !!s.showCeiling; $('#b3Ceiling').classList.toggle('active', !!s.showCeiling); }
 
   // ---------- المشاريع ----------
-  function saveProject(silent) { const thumb = editor.toDataURL(24); const ok = STATE.Store.save(P, thumb); if (!silent) toast(ok ? 'تم حفظ المشروع ✓' : 'تعذّر الحفظ (مساحة التخزين ممتلئة)'); renderSaved(); }
+  function saveProject(silent) { const thumb = editor.toDataURL(24); const ok = STATE.Store.save(P, thumb); STATE.Store.pushHistory(P.d, 'save'); if (!silent) toast(ok ? 'تم حفظ المشروع ✓' : 'تعذّر الحفظ (مساحة التخزين ممتلئة)'); renderSaved(); }
   function renderSaved() {
     const list = STATE.Store.list(); const el = $('#savedList');
     el.innerHTML = list.length ? list.map(p => `<div class="saved"><img src="${p.thumb || ''}" alt=""><div class="body"><b>${esc(p.name)}</b><small>${new Date(p.updated).toLocaleString('ar-EG')} · ${(p.data.rooms || []).length} غرف · ${(p.data.items || []).length} قطعة</small><div class="row"><button class="tb primary" data-open="${p.pid}">فتح</button><button class="tb" data-dup="${p.pid}">نسخ</button><button class="tb danger" data-del="${p.pid}">حذف</button></div></div></div>`).join('') : '<p class="hint">لا توجد مشاريع محفوظة بعد.</p>';
     el.querySelectorAll('[data-open]').forEach(b => b.onclick = () => { const p = STATE.Store.get(b.dataset.open); if (p) { P.load(p.data); closeModals(); toast('تم فتح ' + p.name); } });
     el.querySelectorAll('[data-dup]').forEach(b => b.onclick = () => { const p = STATE.Store.get(b.dataset.dup); if (p) { const d = JSON.parse(JSON.stringify(p.data)); delete d.pid; d.name = p.name + ' (نسخة)'; const tmp = new STATE.Project(d); STATE.Store.save(tmp, p.thumb); renderSaved(); } });
     el.querySelectorAll('[data-del]').forEach(b => b.onclick = () => { if (confirm('حذف هذا المشروع نهائياً؟')) { STATE.Store.remove(b.dataset.del); renderSaved(); } });
+    const hl = $('#histList'); const hist = STATE.Store.history();
+    hl.innerHTML = hist.length ? hist.map((h, i) => `<div class="hist"><div><b>${esc(h.name || 'بدون اسم')}</b> <small>${new Date(h.t).toLocaleString('ar-EG')} · ${h.rooms} غرف · ${h.items} قطعة · ${h.reason === 'save' ? 'حفظ يدوي' : 'تلقائي'}</small></div><button class="tb" data-hist="${i}">استعادة</button></div>`).join('') : '<p class="hint">لا توجد نسخ بعد. تُحفظ نسخة مع كل حفظ وكل دقيقتين من العمل.</p>';
+    hl.querySelectorAll('[data-hist]').forEach(b => b.onclick = () => { const h = STATE.Store.history()[+b.dataset.hist]; if (!h) return; P.snapshot(); const d = JSON.parse(h.json); delete d.pid; P.load(d); closeModals(); toast('تمت استعادة النسخة — يمكنك التراجع بـ Ctrl+Z'); });
   }
   function renderTemplates() { $('#tplGrid').innerHTML = TEMPLATES.list.map(t => `<button class="tpl" data-tpl="${t.id}"><div class="ic">${t.icon}</div><b>${t.n}</b><small>${t.desc}</small></button>`).join(''); $$('#tplGrid .tpl').forEach(b => b.onclick = () => { showLoading(true); setTimeout(() => { TEMPLATES.build(P, b.dataset.tpl); closeModals(); showLoading(false); toast('جاهز! عدّل ما تشاء أو افتح العرض ثلاثي الأبعاد'); }, 30); }); }
   function showLoading(v) { $('#loading').hidden = !v; }
@@ -210,8 +222,8 @@
   }
 
   // ---------- التصدير ----------
-  function exportJSON() { const data = JSON.stringify(P.d, null, 1); download((P.d.name || 'project') + '.baity5d.json', 'data:application/json;charset=utf-8,' + encodeURIComponent(data)); }
-  function exportCSV() { const rows = [['العنصر', 'الفئة', 'العرض', 'العمق', 'الارتفاع', 'الغرفة', 'السعر']]; P.d.items.forEach(i => { const def = CATALOG.BY_ID[i.defId] || {}; const r = P.roomAt(i.x, i.y); rows.push([def.n, (CATALOG.CATEGORIES.find(c => c.id === def.cat) || {}).n, i.w, i.d, i.h, r ? r.name : '', def.price || 0]); }); const e = AI.estimate(P); rows.push([]); e.rows.forEach(r => rows.push([r[0], '', '', '', '', '', Math.round(r[1])])); rows.push(['الإجمالي', '', '', '', '', '', Math.round(e.total)]); const csv = '﻿' + rows.map(r => r.map(c => '"' + String(c).replace(/"/g, '""') + '"').join(',')).join('\n'); download((P.d.name || 'project') + '.csv', 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv)); }
+  function exportJSON() { const data = JSON.stringify(P.d, null, 1); download(fileName('omran.json'), 'data:application/json;charset=utf-8,' + encodeURIComponent(data)); }
+  function exportCSV() { const rows = [['العنصر', 'الفئة', 'العرض', 'العمق', 'الارتفاع', 'الغرفة', 'السعر']]; P.d.items.forEach(i => { const def = CATALOG.BY_ID[i.defId] || {}; const r = P.roomAt(i.x, i.y); rows.push([def.n, (CATALOG.CATEGORIES.find(c => c.id === def.cat) || {}).n, i.w, i.d, i.h, r ? r.name : '', def.price || 0]); }); const e = AI.estimate(P); rows.push([]); e.rows.forEach(r => rows.push([r[0], '', '', '', '', '', Math.round(r[1])])); rows.push(['الإجمالي', '', '', '', '', '', Math.round(e.total)]); const csv = '﻿' + rows.map(r => r.map(c => '"' + String(c).replace(/"/g, '""') + '"').join(',')).join('\n'); download(fileName('csv'), 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv)); }
   function showShot(url, name) { $('#shotImg').src = url; $('#shotDl').href = url; $('#shotDl').download = name; closeModals(); openModal('#mShot'); }
   function shareLink() { try { const json = JSON.stringify(P.d); const b64 = btoa(unescape(encodeURIComponent(json))); const url = location.origin + location.pathname + '#p=' + b64; if (url.length > 60000) { toast('المشروع كبير جداً للرابط — استخدم تصدير JSON'); return; } (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject()).then(() => toast('تم نسخ الرابط ✓ (يحتوي المشروع كاملاً)')).catch(() => prompt('انسخ الرابط:', url)); } catch (e) { toast('تعذّر إنشاء الرابط'); } }
   function loadFromHash() { if (location.hash.startsWith('#p=')) { try { const json = decodeURIComponent(escape(atob(location.hash.slice(3)))); P.load(JSON.parse(json)); history.replaceState(null, '', location.pathname); toast('تم فتح المشروع من الرابط'); return true; } catch (e) { console.warn(e); } } return false; }
@@ -221,7 +233,7 @@
     $('#projName').addEventListener('input', e => { P.d.name = e.target.value; });
     $('#btnUndo').onclick = () => P.doUndo(); $('#btnRedo').onclick = () => P.doRedo();
     $('#btn2d').onclick = () => setMode('2d'); $('#btn3d').onclick = () => setMode('3d');
-    $('#btnAI').onclick = () => { openModal('#mAI'); refreshAIBoxes(); if (!$('#chatLog').children.length) chatAdd('أهلاً! أنا المصمم الذكي 👋\nاكتب ما تريد، مثلاً: «صمّم لي شقة غرفتين نوم بنمط مودرن» أو «أثّث المطبخ» أو «كم التكلفة؟». أو استخدم الأدوات على اليسار.', 'bot'); setTimeout(() => $('#chatText').focus(), 100); };
+    $('#btnAI').onclick = () => { openModal('#mAI'); refreshAIBoxes(); if (!$('#chatLog').children.length) chatAdd('أهلاً بك في عمران! أنا المصمم الذكي 👋\nاكتب ما تريد، مثلاً: «صمّم لي شقة غرفتين نوم بنمط مودرن» أو «أثّث المطبخ» أو «كم التكلفة؟». أو استخدم الأدوات على اليسار.', 'bot'); setTimeout(() => $('#chatText').focus(), 100); };
     $('#btnSave').onclick = () => saveProject(); $('#btnProjects').onclick = () => { renderSaved(); openModal('#mProjects'); }; $('#btnExport').onclick = () => openModal('#mExport'); $('#btnHelp').onclick = () => openModal('#mHelp'); $('#brand').onclick = () => { renderSaved(); openModal('#mProjects'); };
     $$('[data-close]').forEach(b => b.onclick = closeModals); $$('.modal').forEach(m => m.addEventListener('pointerdown', e => { if (e.target === m) closeModals(); }));
     $$('#sideTabs button').forEach(b => b.onclick = () => { $$('#sideTabs button').forEach(x => x.classList.toggle('active', x === b)); $$('.tab-body').forEach(t => t.hidden = t.id !== 'tab-' + b.dataset.tab); });
@@ -245,7 +257,7 @@
     $('#b3Orbit').onclick = () => setWalk(false); $('#b3Walk').onclick = () => setWalk(true); $('#b3Top').onclick = () => { setWalk(false); app.view3d.topView(); }; $('#b3Focus').onclick = () => app.view3d.focus();
     $('#b3Night').onclick = e => { app.view3d.setNight(!app.view3d.night); e.currentTarget.classList.toggle('active', app.view3d.night); };
     $('#b3Ceiling').onclick = () => { P.d.settings.showCeiling = !P.d.settings.showCeiling; $('#setCeiling').checked = P.d.settings.showCeiling; $('#b3Ceiling').classList.toggle('active', P.d.settings.showCeiling); app.view3d.build(); };
-    $('#b3Shot').onclick = () => showShot(app.view3d.screenshot(), (P.d.name || 'baity5d') + '-3d.png');
+    $('#b3Shot').onclick = () => showShot(app.view3d.screenshot(), fileName('3d.png'));
     $$('#walkPad button').forEach(b => { const on = e => { e.preventDefault(); app.view3d.walkInput(b.dataset.k, true); }; const off = () => app.view3d.walkInput(b.dataset.k, false); b.addEventListener('pointerdown', on); b.addEventListener('pointerup', off); b.addEventListener('pointerleave', off); b.addEventListener('pointercancel', off); });
     // المصمم الذكي
     $('#chatForm').onsubmit = e => { e.preventDefault(); const t = $('#chatText').value; $('#chatText').value = ''; ask(t); };
@@ -254,9 +266,10 @@
     $('#btnFurnishSel').onclick = () => { const r = selectedRoom(); if (!r) { toast('حدّد غرفة في المخطط أولاً'); return; } P.snapshot(); const n = AI.furnish(P, r, $('#fStyle').value, $('#fKeep').checked); P.emit('change'); chatAdd(`تم وضع ${n} قطعة في «${r.name}».`, 'bot'); refreshAIBoxes(); };
     $('#btnFurnishAll').onclick = () => { if (!P.d.rooms.length) { toast('لا توجد غرف بعد'); return; } P.snapshot(); let n = 0; P.d.rooms.forEach(r => n += AI.furnish(P, r, $('#fStyle').value, $('#fKeep').checked)); P.emit('change'); chatAdd(`تم تأثيث ${P.d.rooms.length} غرفة بـ ${n} قطعة.`, 'bot'); refreshAIBoxes(); };
     // التصدير
-    $('#exPng2d').onclick = () => showShot(editor.toDataURL(80), (P.d.name || 'plan') + '-2d.png');
-    $('#exPng3d').onclick = () => { if (!app.view3d) { setMode('3d'); } setTimeout(() => showShot(app.view3d.screenshot(), (P.d.name || 'plan') + '-3d.png'), 200); };
-    $('#exJson').onclick = exportJSON; $('#exCsv').onclick = exportCSV; $('#exPrint').onclick = () => { closeModals(); setTimeout(() => window.print(), 100); }; $('#exLink').onclick = shareLink;
+    $('#exPng2d').onclick = () => showShot(editor.toDataURL(80), fileName('2d.png'));
+    $('#exPng3d').onclick = () => { if (!app.view3d) { setMode('3d'); } setTimeout(() => showShot(app.view3d.screenshot(), fileName('3d.png')), 200); };
+    $('#exJson').onclick = () => { exportJSON(); closeModals(); toast('تم تنزيل ملف المشروع'); }; $('#exCsv').onclick = () => { exportCSV(); closeModals(); toast('تم تنزيل قائمة الأثاث'); }; $('#exPrint').onclick = () => { closeModals(); setTimeout(() => window.print(), 100); }; $('#exLink').onclick = shareLink;
+    $('#btnCustomItem').onclick = () => openModal('#mCustom'); $('#customForm').onsubmit = e => { e.preventDefault(); createCustomItem(e.target); };
     $('#btnImport').onclick = () => $('#fileImport').click(); $('#fileImport').onchange = e => { const f = e.target.files[0]; if (!f) return; const rd = new FileReader(); rd.onload = () => { try { const d = JSON.parse(rd.result); if (!d.rooms || !d.walls) throw 0; delete d.pid; P.load(d); closeModals(); toast('تم الاستيراد ✓'); } catch (err) { toast('ملف غير صالح'); } }; rd.readAsText(f); e.target.value = ''; };
     // الجوال
     $$('#mobileNav button').forEach(b => b.onclick = () => { const n = b.dataset.nav; if (n === 'view') { setMode(app.mode === '2d' ? '3d' : '2d'); return; } if (n === 'ai') { $('#btnAI').click(); return; } const sb = $('#sidebar'), pr = $('#props'); if (n === 'props') { const open = !pr.classList.contains('open'); closeSheets(); pr.classList.toggle('open', open); b.classList.toggle('active', open); return; } const wasOpen = sb.classList.contains('open') && $('#sideTabs .active').dataset.tab === n; closeSheets(); if (!wasOpen) { sb.classList.add('open'); $(`#sideTabs [data-tab=${n}]`).click(); b.classList.add('active'); } });
@@ -267,17 +280,32 @@
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); e.shiftKey ? P.doRedo() : P.doUndo(); return; }
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') { e.preventDefault(); P.doRedo(); return; }
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); saveProject(); return; }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c') { const o = app.selected && P.find(app.selected); if (o && P.kindOf(o) === 'item') { e.preventDefault(); copyItem(o); toast('نُسخت القطعة'); } return; }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v') { e.preventDefault(); pasteItem(); return; }
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'd') { e.preventDefault(); const o = app.selected && P.find(app.selected); if (o && P.kindOf(o) === 'item') { P.snapshot(); const c = P.addItem(o.defId, o.x + 0.3, o.y + 0.3, o.rot, { w: o.w, d: o.d, h: o.h, c: o.c, c2: o.c2, elev: o.elev }); P.emit('change'); editor.select(c.id); } return; }
       if (app.mode === '2d') { if (editor.key(e)) { e.preventDefault(); return; } const map = { v: 'select', h: 'pan', g: 'room', w: 'wall', d: 'door', n: 'window', m: 'measure', x: 'delete' }; const t = map[e.key.toLowerCase()]; if (t && !e.ctrlKey && !e.metaKey) editor.setTool(t); }
     });
     window.addEventListener('resize', () => { editor.resize(); if (app.view3d) app.view3d.resize(); });
     window.addEventListener('beforeunload', () => { try { localStorage.setItem(AUTOSAVE, JSON.stringify(P.d)); } catch (e) { } });
   }
+  function copyItem(o) { const def = CATALOG.BY_ID[o.defId]; try { localStorage.setItem(CLIP, JSON.stringify({ item: o, def: def && def.custom ? def : null })); } catch (e) { } }
+  function pasteItem() {
+    let c = null; try { c = JSON.parse(localStorage.getItem(CLIP) || 'null'); } catch (e) { } if (!c || !c.item) { toast('الحافظة فارغة'); return; }
+    if (c.def && !CATALOG.BY_ID[c.def.id]) { P.addCustomDef(c.def); renderCatalog(); } else if (c.def && !(P.d.customDefs || []).some(d => d.id === c.def.id)) { P.d.customDefs.push(c.def); renderCatalog(); }
+    if (!CATALOG.BY_ID[c.item.defId]) { toast('القطعة غير معروفة في هذا الإصدار'); return; }
+    const m = editor.mouse; const [x, y] = m ? [editor.snap(m[0]), editor.snap(m[1])] : [c.item.x + 0.4, c.item.y + 0.4];
+    P.snapshot(); const it = P.addItem(c.item.defId, x, y, c.item.rot, { w: c.item.w, d: c.item.d, h: c.item.h, c: c.item.c, c2: c.item.c2, elev: c.item.elev }); P.emit('change'); editor.select(it.id); toast('تم اللصق');
+  }
+  function createCustomItem(form) {
+    const f = new FormData(form); const def = { n: String(f.get('n')).trim().slice(0, 40), w: +f.get('w'), d: +f.get('d'), h: +f.get('h'), kind: f.get('kind'), mount: f.get('mount'), c: f.get('c'), price: +f.get('price') || 0, elev: f.get('mount') === 'wall' ? 1.0 : 0 };
+    if (!def.n || !(def.w > 0) || !(def.d > 0) || !(def.h > 0)) { toast('أكمل الاسم والأبعاد'); return; }
+    P.snapshot(); P.addCustomDef(def); catFilter = 'custom'; renderCatalog(); closeModals(); editor.setTool('place', def.id); P.emit('change'); toast('أنشئت «' + def.n + '» — اضغط في المخطط لوضعها');
+  }
   function closeSheets() { $('#sidebar').classList.remove('open'); $('#props').classList.remove('open'); $$('#mobileNav button').forEach(b => b.classList.remove('active')); }
 
   // ---------- البدء ----------
   function init() {
-    editor = new Editor2D($('#c2d'), P, app); app.editor = editor; window.BAITY = { P, app, editor };
+    editor = new Editor2D($('#c2d'), P, app); app.editor = editor; window.OMRAN = { P, app, editor };
     renderCatalog(); renderMaterials(); renderTemplates(); renderStyles(); bind(); readSettings();
     let loaded = loadFromHash();
     if (!loaded) { try { const a = localStorage.getItem(AUTOSAVE); if (a) { const d = JSON.parse(a); if (d && (d.rooms.length || d.walls.length || d.items.length)) { P.load(d); loaded = true; } } } catch (e) { } }

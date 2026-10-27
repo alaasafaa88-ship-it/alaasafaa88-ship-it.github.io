@@ -89,11 +89,11 @@
       switch (this.tool) {
         case 'select': {
           if (this.sel) { // مقبض التدوير
-            const o = P.find(this.sel); if (o && P.kindOf(o) === 'item') { const h = this.rotHandle(o); if (Math.hypot(h[0] - x, h[1] - y) < 12 / this.view.s) { P.snapshot(); this.drag = { kind: 'rotate', id: o.id }; return; } }
+            const o = P.find(this.sel); if (o && P.kindOf(o) === 'item' && !o.locked) { const h = this.rotHandle(o); if (Math.hypot(h[0] - x, h[1] - y) < 12 / this.view.s) { P.snapshot(); this.drag = { kind: 'rotate', id: o.id }; return; } }
           }
           const id = this.hit(x, y); this.select(id);
           if (id) { const o = P.find(id), k = P.kindOf(o);
-            if (k === 'item') { P.snapshot(); this.drag = { kind: 'item', id, dx: o.x - x, dy: o.y - y, moved: false }; }
+            if (k === 'item') { if (o.locked) { this.drag = null; } else { P.snapshot(); this.drag = { kind: 'item', id, dx: o.x - x, dy: o.y - y, moved: false }; } }
             else if (k === 'opening') { P.snapshot(); this.drag = { kind: 'opening', id }; }
             else if (k === 'room') { P.snapshot(); this.drag = { kind: 'room', id, dx: o.x - x, dy: o.y - y, walls: P.roomWalls(o).map(w => ({ id: w.id, x1: w.x1, y1: w.y1, x2: w.x2, y2: w.y2 })), items: P.d.items.filter(i => i.x >= o.x && i.x <= o.x + o.w && i.y >= o.y && i.y <= o.y + o.h).map(i => ({ id: i.id, x: i.x, y: i.y })), ox: o.x, oy: o.y }; }
             else if (k === 'wall') { P.snapshot(); this.drag = { kind: 'wall', id, sx: x, sy: y, x1: o.x1, y1: o.y1, x2: o.x2, y2: o.y2 }; }
@@ -147,7 +147,7 @@
       const P = this.project; const o = this.sel ? P.find(this.sel) : null;
       if (e.key === 'Escape') { if (this.tool === 'wall' && this.wallPts.length) this.finishWall(); else { this.setTool('select'); this.select(null); } return true; }
       if ((e.key === 'Delete' || e.key === 'Backspace') && o) { P.snapshot(); P.remove(o.id); this.select(null); P.emit('remove'); return true; }
-      if (o && P.kindOf(o) === 'item') {
+      if (o && P.kindOf(o) === 'item' && !o.locked) {
         if (e.key === 'r' || e.key === 'R') { P.snapshot(); o.rot = (o.rot + (e.shiftKey ? 45 : 90)) % 360; P.emit('change'); return true; }
         const step = e.shiftKey ? 0.5 : 0.05; let moved = true;
         if (e.key === 'ArrowLeft') o.x -= step; else if (e.key === 'ArrowRight') o.x += step; else if (e.key === 'ArrowUp') o.y -= step; else if (e.key === 'ArrowDown') o.y += step; else moved = false;
@@ -222,12 +222,13 @@
       if (def.mount === 'ceiling') ctx.globalAlpha = 0.6;
       draw2D(ctx, def.kind, it, def, s);
       ctx.globalAlpha = 1;
+      if (it.locked) { ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.font = `${0.22}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('🔒', 0, 0); }
       if (sel || hov) { ctx.strokeStyle = sel ? '#2563eb' : '#60a5fa'; ctx.lineWidth = 2 / s; ctx.setLineDash([4 / s, 3 / s]); ctx.strokeRect(-it.w / 2 - 0.04, -it.d / 2 - 0.04, it.w + 0.08, it.d + 0.08); ctx.setLineDash([]); }
       ctx.restore();
       if (this.showLabels && it.w * s > 46 && it.d * s > 26 && def.kind !== 'rug' && def.kind !== 'rugRound') { ctx.font = `${Math.max(9, Math.min(11, s / 7))}px Tajawal, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillText(def.n, x, y); }
     }
     drawSelection() {
-      const P = this.project, o = P.find(this.sel); if (!o || P.kindOf(o) !== 'item') return; const ctx = this.ctx; const h = this.rotHandle(o); const [hx, hy] = this.toScreen(h[0], h[1]); const [cx, cy] = this.toScreen(o.x, o.y);
+      const P = this.project, o = P.find(this.sel); if (!o || P.kindOf(o) !== 'item' || o.locked) return; const ctx = this.ctx; const h = this.rotHandle(o); const [hx, hy] = this.toScreen(h[0], h[1]); const [cx, cy] = this.toScreen(o.x, o.y);
       ctx.strokeStyle = '#2563eb'; ctx.lineWidth = 1; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(hx, hy); ctx.stroke(); ctx.setLineDash([]);
       ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(hx, hy, 8, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); ctx.fillStyle = '#2563eb'; ctx.font = '11px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('↻', hx, hy + 1);
     }
