@@ -1,0 +1,24 @@
+feature,area,priority,original,clone,notes
+Business profile with logo,settings,must,yes,yes,S07
+Create invoice with line items,invoices,must,yes,yes,S02
+Quantity price discount and tax per invoice,invoices,must,yes,yes,S02 global discount + VAT rate
+Invoice numbering auto increment,invoices,must,yes,yes,prefix + counter
+Client book and picker,clients,must,yes,yes,S05
+Preview invoice with template,preview,must,yes,yes,S03 three templates
+Export PDF,preview,must,yes,yes,browser print to PDF
+Share invoice,preview,must,yes,yes,Web Share API with fallback copy
+Mark invoice paid / sent / overdue,invoices,must,yes,yes,S03
+Search and filter invoices,invoices,must,yes,yes,S01
+Estimates and convert to invoice,estimates,should,yes,yes,S04
+Products and services catalog,products,should,yes,yes,S06
+Signature on invoice,preview,should,yes,yes,touch signature pad
+Personalize colour and template,settings,should,yes,yes,accent + template
+Payment instructions and terms,invoices,should,yes,yes,defaults in settings
+Tax QR code (ZATCA TLV),preview,should,partial,yes,Saudi e-invoice phase 1 QR
+Reports of paid and outstanding,reports,should,yes,yes,S08
+Backup and restore,settings,should,yes,yes,JSON export import
+Multiple currencies,settings,should,yes,yes,SAR AED KWD QAR BHD OMR EGP JOD USD EUR
+Installable offline app,platform,should,yes,yes,manifest + service worker
+Cloud sync and login,platform,could,yes,skip,no server on GitHub Pages
+In-app purchases,platform,could,yes,skip,free app
+Send by email from inside the app,invoices,could,yes,skip,uses system share instead

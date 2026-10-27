@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>فاتورتي - إنشاء الفواتير وعروض الأسعار</title>
+<meta name="description" content="تطبيق عربي مجاني لإنشاء الفواتير وعروض الأسعار، مع PDF ورمز QR الضريبي والعملاء والمنتجات. يعمل بدون إنترنت ويحفظ بياناتك على جهازك.">
+<meta name="theme-color" content="#1d4ed8">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="فاتورتي">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<a class="skip" href="#main">تخطي إلى المحتوى</a>
+
+<header class="topbar" id="topbar">
+  <button class="iconbtn" id="backbtn" type="button" aria-label="رجوع" hidden>→</button>
+  <h1 class="topbar__title" id="pagetitle">فاتورتي</h1>
+  <div class="topbar__actions" id="topactions"></div>
+</header>
+
+<main id="main" class="main" tabindex="-1"></main>
+
+<nav class="tabbar" aria-label="التنقل الرئيسي">
+  <a href="#/invoices" data-tab="invoices"><span class="tabbar__icon" aria-hidden="true">🧾</span>الفواتير</a>
+  <a href="#/estimates" data-tab="estimates"><span class="tabbar__icon" aria-hidden="true">📝</span>العروض</a>
+  <a href="#/clients" data-tab="clients"><span class="tabbar__icon" aria-hidden="true">👥</span>العملاء</a>
+  <a href="#/reports" data-tab="reports"><span class="tabbar__icon" aria-hidden="true">📊</span>التقارير</a>
+  <a href="#/settings" data-tab="settings"><span class="tabbar__icon" aria-hidden="true">⚙️</span>الإعدادات</a>
+</nav>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="modal" id="modal" hidden>
+  <div class="modal__sheet" role="dialog" aria-modal="true" aria-labelledby="modaltitle">
+    <div class="modal__head"><h2 id="modaltitle"></h2><button class="iconbtn" id="modalclose" type="button" aria-label="إغلاق">✕</button></div>
+    <div class="modal__body" id="modalbody"></div>
+  </div>
+</div>
+
+<script src="js/vendor/qrcode.js" defer></script>
+<script src="js/app.js" defer></script>
+</body>
+</html>
