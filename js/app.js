@@ -464,8 +464,8 @@ route(/^\/settings$/, () => {
     Object.assign(s,{currency:$('#scur').value,taxRate:Number($('#stax').value)||0,invPrefix:$('#sip').value,invNext:Math.max(1,Number($('#sin').value)||1),dueDays:Number($('#sdd').value)||0,estPrefix:$('#sep').value,estNext:Math.max(1,Number($('#sen').value)||1),qr:$('#sqr').checked,notes:$('#sn').value,terms:$('#st').value,payment:$('#sp').value});
     save(); applyAccent(); toast('تم حفظ الإعدادات'); };
   $('#backup').onclick = () => { const blob=new Blob([JSON.stringify(db,null,1)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`fatoorati-backup-${today()}.json`; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),2000); };
-  $('#restore').onchange = e => { const f=e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>{ try{ const d=JSON.parse(r.result); if(!d.settings||!Array.isArray(d.docs)) throw 0; confirmBox('استبدال كل البيانات الحالية بالنسخة المحددة؟', ()=>{ localStorage.setItem(KEY, JSON.stringify(d)); db=load(); applyAccent(); toast('تمت الاستعادة'); render(); }); }catch(x){ toast('الملف غير صالح'); } }; r.readAsText(f); };
-  $('#wipe').onclick = () => confirmBox('مسح كل الفواتير والعملاء والإعدادات نهائياً؟ لا يمكن التراجع.', ()=>{ localStorage.removeItem(KEY); db=load(); applyAccent(); navigate('/welcome'); });
+  $('#restore').onchange = e => { const f=e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>{ try{ const d=JSON.parse(r.result); if(!d.settings||!Array.isArray(d.docs)) throw 0; confirmBox('استبدال كل البيانات الحالية بالنسخة المحددة؟', ()=>{ try{ localStorage.setItem(KEY, JSON.stringify(d)); }catch(x){} db=load(); applyAccent(); toast('تمت الاستعادة'); render(); }); }catch(x){ toast('الملف غير صالح'); } }; r.readAsText(f); };
+  $('#wipe').onclick = () => confirmBox('مسح كل الفواتير والعملاء والإعدادات نهائياً؟ لا يمكن التراجع.', ()=>{ try{ localStorage.removeItem(KEY); }catch(x){} db=load(); applyAccent(); navigate('/welcome'); });
 });
 function shrinkImage(file, max, cb){ const img=new Image(); img.onload=()=>{ const r=Math.min(1, max/Math.max(img.width,img.height)); const c=document.createElement('canvas'); c.width=Math.round(img.width*r); c.height=Math.round(img.height*r); c.getContext('2d').drawImage(img,0,0,c.width,c.height); cb(c.toDataURL('image/png')); URL.revokeObjectURL(img.src); }; img.src=URL.createObjectURL(file); }
 function sigPad(cv, clearBtn, saveBtn, cb){
@@ -481,8 +481,8 @@ function sigPad(cv, clearBtn, saveBtn, cb){
 /* ---------- install tip + boot ---------- */
 let deferredInstall=null;
 window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredInstall=e; render(); });
-function installTip(){ if(!deferredInstall || sessionStorage.getItem('tipoff')) return ''; return `<div class="install-tip no-print"><span>📲</span><span style="flex:1">ثبّت «فاتورتي» على هاتفك ليعمل بدون إنترنت.</span><button class="btn btn--sm" id="installbtn">تثبيت</button><button class="iconbtn" id="tipoff" aria-label="إخفاء">✕</button></div>`; }
-document.addEventListener('click', e => { if(e.target.id==='installbtn' && deferredInstall){ deferredInstall.prompt(); deferredInstall=null; } if(e.target.id==='tipoff'){ sessionStorage.setItem('tipoff','1'); render(); } });
+function installTip(){ let off=false; try{ off=!!sessionStorage.getItem('tipoff'); }catch(e){} if(!deferredInstall || off) return ''; return `<div class="install-tip no-print"><span>📲</span><span style="flex:1">ثبّت «فاتورتي» على هاتفك ليعمل بدون إنترنت.</span><button class="btn btn--sm" id="installbtn">تثبيت</button><button class="iconbtn" id="tipoff" aria-label="إخفاء">✕</button></div>`; }
+document.addEventListener('click', e => { if(e.target.id==='installbtn' && deferredInstall){ deferredInstall.prompt(); deferredInstall=null; } if(e.target.id==='tipoff'){ try{ sessionStorage.setItem('tipoff','1'); }catch(x){} deferredInstall=null; render(); } });
 if('serviceWorker' in navigator && location.protocol==='https:'){ navigator.serviceWorker.register('sw.js').catch(()=>{}); }
 applyAccent(); render();
 })();
