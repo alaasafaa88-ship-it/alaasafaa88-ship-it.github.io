@@ -23,7 +23,8 @@
 project  { pid, name, created, updated, version:1,
            settings { wallHeight, wallThickness, currency, showCeiling, exteriorColor },
            rooms[], walls[], openings[], items[] }
-room     { id, name, type, x, y, w, h, floor, wall, ceiling }
+room     { id, name, type, x, y, w, h, lvl, floor(مادة), wall, ceiling }   -- lvl = رقم الطابق على كل الكيانات
+floors   [{ id, n }]  + currentFloor
 wall     { id, x1, y1, x2, y2, t, h, color|null }
 opening  { id, type, wallId, t(0..1), w, h, sill, flip, swing }
 item     { id, defId, x, y, rot, w, d, h, c, c2, elev }
@@ -71,5 +72,5 @@ Webhooks: لا شيء. Jobs: لا شيء (الحفظ التلقائي مؤقت 8
 
 1. الشريحة العمودية: S01 → S02 (غرفة + باب) → S03 (قطعة) → S08 (3D) → حفظ. **منجزة** في الالتزام fbf0666.
 2. must-haves: كلها منجزة (انظر parity.md) عدا موديلات الأصلي المرخّصة (skip).
-3. should-haves: طوابق متعددة، قفل القطع، نسخ/لصق بين المشاريع، تعدد اللغات، مزامنة سحابية — غير مبنية.
+3. should-haves: طوابق متعددة، قفل القطع، نسخ/لصق، خامات القطع، تقرير PDF — مبنية في الجولة الثانية. المتبقي: تعدد اللغات، مزامنة سحابية.
 4. إصلاحات من replica-entrepreneur: تاريخ النسخ (حفظ 3 نسخ سابقة)، استيراد قطعة مخصصة (صندوق بأبعاد واسم ولون) — انظر fixes.md.

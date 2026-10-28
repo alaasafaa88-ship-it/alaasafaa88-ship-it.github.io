@@ -81,6 +81,8 @@ kbd { background: #eef0f3; border: 1px solid #d6d9de; border-bottom-width: 2px; 
 #c2d.tool-pan { cursor: grab; }
 #v3d { position: absolute; inset: 0; background: #cfe6f5; }
 #v3d canvas { display: block; touch-action: none; }
+#floorSel { border: 1px solid var(--line); border-radius: 9px; padding: 6px 8px; background: #fff; font-weight: 700; max-width: 150px; }
+.floor-head { font-size: 12px; color: var(--muted); font-weight: 800; margin: 10px 0 4px; }
 #floatTools, #tools3d { position: absolute; top: 12px; right: 12px; display: flex; gap: 4px; background: rgba(255,255,255,.95); padding: 5px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,.12); z-index: 5; backdrop-filter: blur(6px); }
 .ft { width: 36px; height: 36px; border: 0; border-radius: 9px; background: transparent; font-size: 16px; }
 .ft:hover { background: #eef0f3; }
@@ -183,7 +185,8 @@ kbd { background: #eef0f3; border: 1px solid #d6d9de; border-bottom-width: 2px; 
 @media (max-width: 900px) {
   :root { --top: 48px; }
   #topbar { gap: 6px; padding: 0 8px; }
-  .brand-name, .tb .lbl, #btnExport, #btnHelp, .view-toggle, #btnProjects, #btnSave { display: none; }
+  .brand-name, .tb .lbl, #btnExport, #btnHelp, .view-toggle, #btnProjects, #btnSave, #btnFloorDup, #btnFloorDel { display: none; }
+  #floorSel { max-width: 110px; }
   .proj-name { width: auto; flex: 1; min-width: 0; font-size: 14px; }
   #btnAI { padding: 6px 9px; font-size: 12.5px; }
   #mobileNav { display: flex; }

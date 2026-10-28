@@ -32,6 +32,7 @@
       <button id="btn2d" class="active" role="tab">📐 مخطط 2D</button>
       <button id="btn3d" role="tab">🏠 عرض 3D</button>
     </div>
+    <div class="tb-group" id="floorBar"><select id="floorSel" title="الطابق الحالي" aria-label="الطابق الحالي"></select><button class="tb" id="btnFloorAdd" title="إضافة طابق">＋ <span class="lbl">طابق</span></button><button class="tb" id="btnFloorDup" title="نسخ هذا الطابق إلى طابق جديد">⧉</button><button class="tb danger" id="btnFloorDel" title="حذف هذا الطابق">✕</button></div>
     <div class="tb-group grow"></div>
     <div class="tb-group">
       <button class="tb primary" id="btnAI">✨ المصمم الذكي</button>
@@ -132,6 +133,7 @@
           <span class="sep"></span>
           <button class="ft" id="b3Night" title="ليل/نهار">🌙</button>
           <button class="ft" id="b3Ceiling" title="الأسقف">🏠</button>
+          <button class="ft" id="b3Only" title="إظهار الطابق الحالي فقط">🏢</button>
           <button class="ft" id="b3Shot" title="التقاط صورة">📷</button>
         </div>
         <div id="walkPad" hidden>
@@ -229,7 +231,8 @@
       <button class="tb" id="exPng3d">📷 صورة العرض ثلاثي الأبعاد (PNG)</button>
       <button class="tb" id="exJson">📄 ملف المشروع (JSON) — للنسخ الاحتياطي</button>
       <button class="tb" id="exCsv">📋 قائمة الأثاث والتكلفة (CSV)</button>
-      <button class="tb" id="exPrint">🖨️ طباعة / PDF</button>
+      <button class="tb" id="exReport">📑 تقرير PDF مفصّل (مخططات + قائمة الأثاث + التكلفة)</button>
+      <button class="tb" id="exPrint">🖨️ طباعة المخطط الحالي</button>
       <button class="tb" id="exLink">🔗 نسخ رابط مشاركة</button>
     </div>
   </div>
@@ -243,7 +246,8 @@
       <li><b>ارسم الغرف:</b> أداة «غرفة» ▭ واسحب مستطيلاً. تُنشأ الجدران تلقائياً. أداة «جدار» ━ لرسم جدران حرة نقطة فنقطة (نقر مزدوج للإنهاء).</li>
       <li><b>الأبواب والنوافذ:</b> اختر الأداة ثم اضغط على أي جدار. غيّر النوع والعرض من لوحة الخصائص.</li>
       <li><b>الأثاث:</b> من الكتالوج (215 قطعة في 15 فئة، أو قطعة مخصصة بأبعادك) اضغط القطعة ثم اضغط في المخطط. اسحب للتحريك، والمقبض ↻ للتدوير، و<kbd>R</kbd> للتدوير السريع.</li>
-      <li><b>المواد:</b> حدّد غرفة ثم اختر أرضية ودهاناً من تبويب «المواد». لون كل قطعة قابل للتغيير من الخصائص.</li>
+      <li><b>المواد:</b> حدّد غرفة ثم اختر أرضية ودهاناً من تبويب «المواد». لون كل قطعة وخامتها (خشب، رخام، قماش، معدن، زجاج…) من الخصائص.</li>
+      <li><b>الطوابق:</b> من شريط الطوابق أعلى الشاشة: «＋ طابق» لإضافة دور، «⧉» لنسخ الدور الحالي، والقائمة للتنقل. يظهر الدور الأسفل بشفافية لتحاذيه. في 3D تُعرض الأدوار متراصّة أو الدور الحالي فقط (🏢).</li>
       <li><b>3D:</b> زر «عرض 3D»: اسحب للدوران، عجلة الماوس للتقريب، «تجوّل» للمشي داخل المنزل (W A S D أو الأزرار)، «ليل» لرؤية الإضاءة.</li>
       <li><b>المصمم الذكي:</b> يؤثث الغرف حسب نوعها ونمطك، يقترح الألوان، يقدّر التكلفة، ويحلل التصميم. يعمل بالكامل داخل متصفحك.</li>
       <li><b>الحفظ:</b> «حفظ» يخزّن المشروع في المتصفح. «تصدير» لصورة أو ملف JSON أو رابط مشاركة.</li>

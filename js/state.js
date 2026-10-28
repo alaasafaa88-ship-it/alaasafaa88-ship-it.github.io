@@ -1,4 +1,4 @@
-/* نموذج المشروع: الغرف، الجدران، الفتحات (أبواب/نوافذ)، العناصر، الإعدادات + تراجع/إعادة + حفظ */
+/* نموذج المشروع: الطوابق، الغرف، الجدران، الفتحات (أبواب/نوافذ)، العناصر، الإعدادات + تراجع/إعادة + حفظ ونسخ سابقة */
 (function (global) {
   'use strict';
 
@@ -34,13 +34,22 @@
     { id: 'window_floor', n: 'نافذة أرضية (زجاج كامل)', w: 2.0, h: 2.3, sill: 0.05, price: 1100 },
   ];
 
+  const FINISHES = [
+    { id: '', n: 'لون فقط' }, { id: 'wood', n: 'خشب فاتح' }, { id: 'darkwood', n: 'خشب داكن' }, { id: 'marble', n: 'رخام' },
+    { id: 'stone', n: 'حجر' }, { id: 'fabric', n: 'قماش' }, { id: 'metal', n: 'معدن' }, { id: 'glass', n: 'زجاج' }, { id: 'concrete', n: 'خرسانة' },
+  ];
+
   let seq = 1;
-  const uid = p => (p || 'o') + (Date.now().toString(36)) + (seq++).toString(36);
+  const uid = p => (p || 'o') + (Date.now().toString(36)) + (seth++).toString(36);
+  let seth = 1; // عدّاد مستقل حتى لا يتكرر المعرّف داخل نفس الملّي ثانية
+  const fl = o => o && o.lvl ? o.lvl : 0; // lvl = رقم الطابق (floor على الغرفة = مادة الأرضية)
+  const floorName = i => i === 0 ? 'الدور الأرضي' : i === 1 ? 'الدور الأول' : i === 2 ? 'الدور الثاني' : i === 3 ? 'الدور الثالث' : 'الدور ' + i;
 
   function blank(name) {
     return {
-      version: 1, name: name || 'مشروع جديد', created: Date.now(), updated: Date.now(),
-      settings: { wallHeight: 2.8, wallThickness: 0.2, currency: '$', showCeiling: false, exteriorColor: '#e6dfd2' },
+      version: 2, name: name || 'مشروع جديد', created: Date.now(), updated: Date.now(),
+      settings: { wallHeight: 2.8, wallThickness: 0.2, currency: '$', showCeiling: false, exteriorColor: '#e6dfd2', slab: 0.3 },
+      floors: [{ id: 'f0', n: floorName(0) }], currentFloor: 0,
       rooms: [], walls: [], openings: [], items: [], customDefs: []
     };
   }
@@ -53,16 +62,43 @@
     snapshot() { this.undo.push(JSON.stringify(this.data)); if (this.undo.length > 60) this.undo.shift(); this.redo = []; }
     doUndo() { if (!this.undo.length) return false; this.redo.push(JSON.stringify(this.data)); this.data = JSON.parse(this.undo.pop()); this.emit('undo'); return true; }
     doRedo() { if (!this.redo.length) return false; this.undo.push(JSON.stringify(this.data)); this.data = JSON.parse(this.redo.pop()); this.emit('redo'); return true; }
-    load(data) { this.data = Object.assign(blank(), data); this.data.settings = Object.assign(blank().settings, data.settings || {}); if (!Array.isArray(this.data.customDefs)) this.data.customDefs = []; this.data.customDefs.forEach(d => CATALOG.register(d)); this.undo = []; this.redo = []; this.emit('load'); }
+    load(data) {
+      this.data = Object.assign(blank(), data); this.data.settings = Object.assign(blank().settings, data.settings || {});
+      if (!Array.isArray(this.data.customDefs)) this.data.customDefs = []; this.data.customDefs.forEach(d => CATALOG.register(d));
+      if (!Array.isArray(this.data.floors) || !this.data.floors.length) this.data.floors = [{ id: 'f0', n: floorName(0) }];
+      ['rooms', 'walls', 'openings', 'items'].forEach(k => this.data[k].forEach(o => { if (!o.lvl) o.lvl = 0; }));
+      this.data.currentFloor = Math.max(0, Math.min(this.data.floors.length - 1, this.data.currentFloor || 0));
+      this.undo = []; this.redo = []; this.emit('load');
+    }
     addCustomDef(def) { def.id = def.id || uid('custom_'); CATALOG.register(def); this.data.customDefs.push(def); return def; }
+
+    // ---- الطوابق ----
+    get cur() { return this.data.currentFloor || 0; }
+    get vis() { const f = this.cur, d = this.data; return { rooms: d.rooms.filter(o => fl(o) === f), walls: d.walls.filter(o => fl(o) === f), openings: d.openings.filter(o => fl(o) === f), items: d.items.filter(o => fl(o) === f) }; }
+    onFloor(f) { const d = this.data; return { rooms: d.rooms.filter(o => fl(o) === f), walls: d.walls.filter(o => fl(o) === f), openings: d.openings.filter(o => fl(o) === f), items: d.items.filter(o => fl(o) === f) }; }
+    setFloor(i) { this.data.currentFloor = Math.max(0, Math.min(this.data.floors.length - 1, i)); }
+    addFloor(name) { const i = this.data.floors.length; this.data.floors.push({ id: uid('f'), n: name || floorName(i) }); return i; }
+    removeFloor(i) {
+      if (this.data.floors.length <= 1) return false; const d = this.data;
+      ['rooms', 'walls', 'openings', 'items'].forEach(k => { d[k] = d[k].filter(o => fl(o) !== i); d[k].forEach(o => { if (fl(o) > i) o.lvl = fl(o) - 1; }); });
+      d.floors.splice(i, 1); d.floors.forEach((f, k) => { if (/^الدور/.test(f.n)) f.n = floorName(k); }); this.setFloor(Math.min(i, d.floors.length - 1)); return true;
+    }
+    duplicateFloor(src, name) {
+      const i = this.addFloor(name); const S = this.onFloor(src); const wallMap = {};
+      S.rooms.forEach(r => this.data.rooms.push(Object.assign({}, r, { id: uid('r'), lvl: i })));
+      S.walls.forEach(w => { const nw = Object.assign({}, w, { id: uid('w'), lvl: i }); wallMap[w.id] = nw.id; this.data.walls.push(nw); });
+      S.openings.forEach(o => { if (wallMap[o.wallId]) this.data.openings.push(Object.assign({}, o, { id: uid('o'), wallId: wallMap[o.wallId], lvl: i })); });
+      S.items.forEach(it => this.data.items.push(Object.assign({}, it, { id: uid('i'), lvl: i })));
+      return i;
+    }
 
     // ---- الجدران ----
     addWall(x1, y1, x2, y2, opts) {
+      opts = opts || {}; const floor = opts.lvl !== undefined ? opts.lvl : this.cur;
       const len = Math.hypot(x2 - x1, y2 - y1); if (len < 0.05) return null;
-      // تجنّب التكرار
-      const dup = this.data.walls.find(w => (near(w.x1, x1) && near(w.y1, y1) && near(w.x2, x2) && near(w.y2, y2)) || (near(w.x1, x2) && near(w.y1, y2) && near(w.x2, x1) && near(w.y2, y1)));
+      const dup = this.data.walls.find(w => fl(w) === floor && ((near(w.x1, x1) && near(w.y1, y1) && near(w.x2, x2) && near(w.y2, y2)) || (near(w.x1, x2) && near(w.y1, y2) && near(w.x2, x1) && near(w.y2, y1))));
       if (dup) return dup;
-      const w = Object.assign({ id: uid('w'), x1, y1, x2, y2, t: this.data.settings.wallThickness, h: this.data.settings.wallHeight, color: null }, opts || {});
+      const w = Object.assign({ id: uid('w'), x1, y1, x2, y2, t: this.data.settings.wallThickness, h: this.data.settings.wallHeight, color: null }, opts, { lvl: floor });
       this.data.walls.push(w); return w;
     }
     wallLength(w) { return Math.hypot(w.x2 - w.x1, w.y2 - w.y1); }
@@ -70,24 +106,25 @@
 
     // ---- الغرف ----
     addRoom(x, y, w, h, type, opts) {
+      opts = opts || {}; const floor = opts.lvl !== undefined ? opts.lvl : this.cur;
       const rt = ROOM_TYPES.find(r => r.id === type) || ROOM_TYPES[0];
-      const n = this.data.rooms.filter(r => r.type === rt.id).length;
-      const room = Object.assign({ id: uid('r'), name: rt.n + (n ? ' ' + (n + 1) : ''), type: rt.id, x, y, w, h, floor: rt.floor, wall: rt.wall, ceiling: '#ffffff' }, opts || {});
-      this.data.rooms.push(room);
-      if (!(opts && opts.noWalls)) {
-        this.addWall(x, y, x + w, y); this.addWall(x + w, y, x + w, y + h); this.addWall(x + w, y + h, x, y + h); this.addWall(x, y + h, x, y);
-      }
+      const n = this.data.rooms.filter(r => r.type === rt.id && fl(r) === floor).length;
+      const room = Object.assign({ id: uid('r'), name: rt.n + (n ? ' ' + (n + 1) : ''), type: rt.id, x, y, w, h, floor: rt.floor, wall: rt.wall, ceiling: '#ffffff' }, opts, { lvl: floor });
+      delete room.noWalls; this.data.rooms.push(room);
+      if (!opts.noWalls) { const o = { lvl: floor }; this.addWall(x, y, x + w, y, o); this.addWall(x + w, y, x + w, y + h, o); this.addWall(x + w, y + h, x, y + h, o); this.addWall(x, y + h, x, y, o); }
       return room;
     }
     removeRoom(id) { this.data.rooms = this.data.rooms.filter(r => r.id !== id); }
-    roomAt(x, y) { return this.data.rooms.filter(r => x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h).sort((a, b) => a.w * a.h - b.w * b.h)[0] || null; }
-    roomWalls(room) { // الجدران الملاصقة لحدود الغرفة
+    roomAt(x, y, floor) { const f = floor === undefined ? this.cur : floor; return this.data.rooms.filter(r => fl(r) === f && x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h).sort((a, b) => a.w * a.h - b.w * b.h)[0] || null; }
+    roomWalls(room) { // الجدران الملاصقة لحدود الغرفة في طابقها
       const eps = 0.15;
       return this.data.walls.filter(w => {
+        if (fl(w) !== fl(room)) return false;
         const onEdge = (x, y) => (Math.abs(x - room.x) < eps || Math.abs(x - room.x - room.w) < eps) && y >= room.y - eps && y <= room.y + room.h + eps || (Math.abs(y - room.y) < eps || Math.abs(y - room.y - room.h) < eps) && x >= room.x - eps && x <= room.x + room.w + eps;
         return onEdge(w.x1, w.y1) && onEdge(w.x2, w.y2) && onEdge((w.x1 + w.x2) / 2, (w.y1 + w.y2) / 2);
       });
     }
+    roomItems(room) { return this.data.items.filter(i => fl(i) === fl(room) && i.x > room.x && i.x < room.x + room.w && i.y > room.y && i.y < room.y + room.h); }
 
     // ---- الفتحات ----
     addOpening(type, wallId, t, opts) {
@@ -95,7 +132,7 @@
       const wall = this.data.walls.find(w => w.id === wallId); if (!wall) return null;
       const L = this.wallLength(wall); const half = ot.w / 2 / L;
       t = Math.max(half + 0.02, Math.min(1 - half - 0.02, t));
-      const o = Object.assign({ id: uid('o'), type: ot.id, wallId, t, w: ot.w, h: ot.h, sill: ot.sill, flip: false, swing: 1 }, opts || {});
+      const o = Object.assign({ id: uid('o'), type: ot.id, wallId, t, w: ot.w, h: ot.h, sill: ot.sill, flip: false, swing: 1 }, opts || {}, { lvl: fl(wall) });
       this.data.openings.push(o); return o;
     }
     openingPos(o) { const w = this.data.walls.find(x => x.id === o.wallId); if (!w) return null; return { x: w.x1 + (w.x2 - w.x1) * o.t, y: w.y1 + (w.y2 - w.y1) * o.t, wall: w, angle: Math.atan2(w.y2 - w.y1, w.x2 - w.x1) }; }
@@ -103,8 +140,8 @@
 
     // ---- العناصر ----
     addItem(defId, x, y, rot, opts) {
-      const def = CATALOG.BY_ID[defId]; if (!def) return null;
-      const it = Object.assign({ id: uid('i'), defId, x, y, rot: rot || 0, w: def.w, d: def.d, h: def.h, c: def.c, c2: def.c2 || null, elev: def.elev || 0 }, opts || {});
+      opts = opts || {}; const def = CATALOG.BY_ID[defId]; if (!def) return null; const floor = opts.lvl !== undefined ? opts.lvl : this.cur;
+      const it = Object.assign({ id: uid('i'), defId, x, y, rot: rot || 0, w: def.w, d: def.d, h: def.h, c: def.c, c2: def.c2 || null, elev: def.elev || 0, finish: def.finish || '' }, opts, { lvl: floor });
       this.data.items.push(it); return it;
     }
     removeItem(id) { this.data.items = this.data.items.filter(i => i.id !== id); }
@@ -113,12 +150,12 @@
     remove(id) { const o = this.find(id); if (!o) return; const k = this.kindOf(o); if (k === 'item') this.removeItem(id); else if (k === 'wall') this.removeWall(id); else if (k === 'room') this.removeRoom(id); else this.data.openings = this.data.openings.filter(x => x.id !== id); }
 
     // ---- حسابات ----
-    bounds() {
-      const xs = [], ys = [];
-      this.data.walls.forEach(w => { xs.push(w.x1, w.x2); ys.push(w.y1, w.y2); });
-      this.data.rooms.forEach(r => { xs.push(r.x, r.x + r.w); ys.push(r.y, r.y + r.h); });
-      this.data.items.forEach(i => { xs.push(i.x - i.w, i.x + i.w); ys.push(i.y - i.d, i.y + i.d); });
-      if (!xs.length) return { x: 0, y: 0, w: 10, h: 8 };
+    bounds(floor) {
+      const xs = [], ys = []; const pick = arr => floor === undefined ? arr : arr.filter(o => fl(o) === floor);
+      pick(this.data.walls).forEach(w => { xs.push(w.x1, w.x2); ys.push(w.y1, w.y2); });
+      pick(this.data.rooms).forEach(r => { xs.push(r.x, r.x + r.w); ys.push(r.y, r.y + r.h); });
+      pick(this.data.items).forEach(i => { xs.push(i.x - i.w, i.x + i.w); ys.push(i.y - i.d, i.y + i.d); });
+      if (!xs.length) return floor !== undefined && floor > 0 && this.data.rooms.length ? this.bounds() : { x: 0, y: 0, w: 10, h: 8 };
       const x = Math.min(...xs), y = Math.min(...ys); return { x, y, w: Math.max(...xs) - x, h: Math.max(...ys) - y };
     }
     totalArea() { return this.data.rooms.reduce((s, r) => s + r.w * r.h, 0); }
@@ -131,8 +168,9 @@
       const flooring = d.rooms.reduce((a, r) => a + r.w * r.h * (MATERIALS.byId(r.floor).price || 20), 0);
       const paint = wallArea * 2 * 4; // 4$ للمتر المربع، وجهان
       const walls = wallLen * 120; // 120$ لكل متر طولي بناء
+      const slabs = d.rooms.filter(r => fl(r) > 0).reduce((a, r) => a + r.w * r.h * 90, 0); // بلاطة خرسانية للأدوار العليا
       const openings = d.openings.reduce((a, o) => a + ((OPENING_TYPES.find(t => t.id === o.type) || {}).price || 0), 0);
-      return { area, wallLen, wallArea, furniture, flooring, paint, walls, openings, total: furniture + flooring + paint + walls + openings, rooms: d.rooms.length, items: d.items.length, doors: d.openings.filter(o => this.isDoor(o)).length, windows: d.openings.filter(o => !this.isDoor(o)).length };
+      return { area, wallLen, wallArea, furniture, flooring, paint, walls, slabs, openings, total: furniture + flooring + paint + walls + slabs + openings, rooms: d.rooms.length, floors: d.floors.length, items: d.items.length, doors: d.openings.filter(o => this.isDoor(o)).length, windows: d.openings.filter(o => !this.isDoor(o)).length };
     }
   }
 
@@ -156,5 +194,5 @@
     pushHistory(data, reason) { const h = Store.history(); const last = h[0]; const json = JSON.stringify(data); if (last && last.json === json) return false; h.unshift({ t: Date.now(), name: data.name, reason: reason || 'auto', items: (data.items || []).length, rooms: (data.rooms || []).length, json }); while (h.length > HMAX) h.pop(); try { localStorage.setItem(HKEY, JSON.stringify(h)); return true; } catch (e) { return false; } },
   };
 
-  global.STATE = { Project, Store, blank, uid, ROOM_TYPES, OPENING_TYPES, roomType: id => ROOM_TYPES.find(r => r.id === id) || ROOM_TYPES[ROOM_TYPES.length - 1], openingType: id => OPENING_TYPES.find(o => o.id === id) || OPENING_TYPES[0] };
+  global.STATE = { Project, Store, blank, uid, fl, floorName, ROOM_TYPES, OPENING_TYPES, FINISHES, roomType: id => ROOM_TYPES.find(r => r.id === id) || ROOM_TYPES[ROOM_TYPES.length - 1], openingType: id => OPENING_TYPES.find(o => o.id === id) || OPENING_TYPES[0] };
 })(window);

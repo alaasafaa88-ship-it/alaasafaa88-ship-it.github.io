@@ -5,7 +5,7 @@
 
   class View3D {
     constructor(container, project, app) {
-      this.el = container; this.project = project; this.app = app; this.night = false; this.walk = false; this.quality = 'high';
+      this.el = container; this.project = project; this.app = app; this.night = false; this.walk = false; this.quality = 'high'; this.onlyFloor = false;
       this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, preserveDrawingBuffer: true });
       this.renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1)); this.renderer.shadowMap.enabled = true; this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       this.renderer.outputEncoding = THREE.sRGBEncoding; this.el.appendChild(this.renderer.domElement);
@@ -15,7 +15,7 @@
       this.controls.addEventListener('change', () => this.requestRender());
       this.root = new THREE.Group(); this.scene.add(this.root); this.lights = new THREE.Group(); this.scene.add(this.lights);
       this.geoCache = {}; this.matCache = {}; this.texCache = {}; this.needs = true; this.walkState = { yaw: 0, pitch: 0, keys: {}, pos: new THREE.Vector3() };
-      this.selBox = null; this.raycaster = new THREE.Raycaster(); this.pick = new THREE.Vector2();
+      this.selBox = null; this.raycaster = new THREE.Raycaster(); this.pick = new THREE.Vector2(); this.levelY = () => 0;
       this.setupLights(); this.ground(); this.bindPick(); this.resize(); this.loop();
     }
     resize() { const r = this.el.getBoundingClientRect(); if (r.width < 2 || r.height < 2) return; this.renderer.setSize(r.width, r.height, false); this.renderer.domElement.style.width = '100%'; this.renderer.domElement.style.height = '100%'; this.camera.aspect = r.width / r.height; this.camera.updateProjectionMatrix(); this.requestRender(); }
@@ -37,23 +37,41 @@
       if (!this.matCache[key]) { const m = new THREE.MeshStandardMaterial({ color, roughness: opts.metal ? 0.2 : 0.75, metalness: opts.metal ? 0.9 : 0.05 }); if (opts.op && opts.op < 1) { m.transparent = true; m.opacity = opts.op; } if (opts.em) { m.emissive = new THREE.Color(color); m.emissiveIntensity = 0.6; } this.matCache[key] = m; }
       return this.matCache[key];
     }
+    matFinish(finish, color) { // خامة القطعة: نسيج أو خصائص سطح بدل اللون المسطّح
+      const key = 'F|' + finish + '|' + color; if (this.matCache[key]) return this.matCache[key];
+      const texOf = id => { const t = this.floorTexture(id).clone(); t.needsUpdate = true; t.repeat.set(1, 1); return t; };
+      let m;
+      if (finish === 'wood') m = new THREE.MeshStandardMaterial({ map: texOf('parquet'), roughness: 0.55 });
+      else if (finish === 'darkwood') m = new THREE.MeshStandardMaterial({ map: texOf('parquet_dark'), roughness: 0.5 });
+      else if (finish === 'marble') m = new THREE.MeshStandardMaterial({ map: texOf('marble'), roughness: 0.25 });
+      else if (finish === 'stone') m = new THREE.MeshStandardMaterial({ map: texOf('stone'), roughness: 0.9 });
+      else if (finish === 'concrete') m = new THREE.MeshStandardMaterial({ map: texOf('concrete'), roughness: 0.95 });
+      else if (finish === 'fabric') m = new THREE.MeshStandardMaterial({ map: texOf('carpet_beige'), color, roughness: 1 });
+      else if (finish === 'metal') m = new THREE.MeshStandardMaterial({ color, metalness: 0.85, roughness: 0.3 });
+      else if (finish === 'glass') m = new THREE.MeshStandardMaterial({ color, transparent: true, opacity: 0.45, roughness: 0.1 });
+      else m = this.mat(color);
+      this.matCache[key] = m; return m;
+    }
     geo(type, seg) { const key = type + (seg || ''); if (!this.geoCache[key]) { this.geoCache[key] = type === 'box' ? new THREE.BoxGeometry(1, 1, 1) : type === 'cyl' ? new THREE.CylinderGeometry(1, 1, 1, seg || 24) : type === 'sph' ? new THREE.SphereGeometry(1, 20, 14) : new THREE.ConeGeometry(1, 1, seg || 24); } return this.geoCache[key]; }
 
     clear() { while (this.root.children.length) { const c = this.root.children.pop(); c.traverse(o => { if (o.geometry && !Object.values(this.geoCache).includes(o.geometry)) o.geometry.dispose(); }); } this.pointLights = []; }
 
     build() {
       const P = this.project, d = P.d, S = d.settings; this.clear();
-      const extMat = this.mat(S.exteriorColor || '#e6dfd2');
-      // الأرضيات والأسقف
-      d.rooms.forEach(r => {
+      const extMat = this.mat(S.exteriorColor || '#e6dfd2'); const slabT = S.slab || 0.3; const levelH = S.wallHeight + slabT;
+      this.levelY = lvl => lvl * levelH; const show = o => !this.onlyFloor || STATE.fl(o) === P.cur;
+      // الأرضيات والأسقف والبلاطات
+      d.rooms.filter(show).forEach(r => {
+        const y0 = this.levelY(STATE.fl(r));
         const tex = this.floorTexture(r.floor); const m = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.6 }); m.map = tex.clone(); m.map.needsUpdate = true; m.map.repeat.set(r.w, r.h);
-        const f = new THREE.Mesh(new THREE.PlaneGeometry(r.w, r.h), m); f.rotation.x = -Math.PI / 2; f.position.set(r.x + r.w / 2, 0.005, r.y + r.h / 2); f.receiveShadow = true; f.userData = { id: r.id }; this.root.add(f);
-        if (S.showCeiling || this.walk) { const c = new THREE.Mesh(new THREE.PlaneGeometry(r.w, r.h), this.mat(r.ceiling || '#ffffff')); c.rotation.x = Math.PI / 2; c.position.set(r.x + r.w / 2, S.wallHeight - 0.005, r.y + r.h / 2); this.root.add(c); }
+        const f = new THREE.Mesh(new THREE.PlaneGeometry(r.w, r.h), m); f.rotation.x = -Math.PI / 2; f.position.set(r.x + r.w / 2, y0 + 0.005, r.y + r.h / 2); f.receiveShadow = true; f.userData = { id: r.id }; this.root.add(f);
+        if (STATE.fl(r) > 0) { const slab = new THREE.Mesh(this.geo('box'), this.mat('#d9d4cb')); slab.scale.set(r.w + 0.02, slabT, r.h + 0.02); slab.position.set(r.x + r.w / 2, y0 - slabT / 2, r.y + r.h / 2); slab.castShadow = true; slab.receiveShadow = true; this.root.add(slab); }
+        if (S.showCeiling || this.walk) { const c = new THREE.Mesh(new THREE.PlaneGeometry(r.w, r.h), this.mat(r.ceiling || '#ffffff')); c.rotation.x = Math.PI / 2; c.position.set(r.x + r.w / 2, y0 + S.wallHeight - 0.005, r.y + r.h / 2); this.root.add(c); }
       });
       // الجدران
-      d.walls.forEach(w => this.buildWall(w, extMat));
+      d.walls.filter(show).forEach(w => this.buildWall(w, extMat));
       // العناصر
-      d.items.forEach(it => this.buildItem(it));
+      d.items.filter(show).forEach(it => this.buildItem(it));
       // إطار البيت الخارجي (أرضية خارجية حول المبنى)
       const b = P.bounds(); if (d.rooms.length) { const pad = 3; const slab = new THREE.Mesh(new THREE.BoxGeometry(b.w + pad * 2, 0.02, b.h + pad * 2), this.mat('#d6d0c4')); slab.position.set(b.x + b.w / 2, -0.012, b.y + b.h / 2); slab.receiveShadow = true; this.root.add(slab); }
       // ظل الشمس يغطي المبنى
@@ -61,15 +79,15 @@
       this.sun.position.set(b.x + b.w / 2 + 12, 22, b.y + b.h / 2 + 8); this.sun.target.position.set(b.x + b.w / 2, 0, b.y + b.h / 2);
       this.applyNight(); this.updateSelection(); this.requestRender();
     }
-    roomColorAt(x, y) { const r = this.project.roomAt(x, y); return r ? r.wall : null; }
+    roomColorAt(x, y, lvl) { const r = this.project.roomAt(x, y, lvl); return r ? r.wall : null; }
     buildWall(w, extMat) {
       const P = this.project, S = P.d.settings; const L = P.wallLength(w); if (L < 0.01) return; const H = w.h || S.wallHeight, T = w.t || S.wallThickness;
       const a = Math.atan2(w.y2 - w.y1, w.x2 - w.x1); const nx = -Math.sin(a), ny = Math.cos(a);
       const mx = (w.x1 + w.x2) / 2, my = (w.y1 + w.y2) / 2;
-      const cA = w.color || this.roomColorAt(mx + nx * (T / 2 + 0.05), my + ny * (T / 2 + 0.05)); const cB = w.color || this.roomColorAt(mx - nx * (T / 2 + 0.05), my - ny * (T / 2 + 0.05));
+      const lvl = STATE.fl(w); const cA = w.color || this.roomColorAt(mx + nx * (T / 2 + 0.05), my + ny * (T / 2 + 0.05), lvl); const cB = w.color || this.roomColorAt(mx - nx * (T / 2 + 0.05), my - ny * (T / 2 + 0.05), lvl);
       const matA = cA ? this.mat(cA) : extMat, matB = cB ? this.mat(cB) : extMat;
       const mats = [extMat, extMat, extMat, extMat, matA, matB]; // +x,-x,+y,-y,+z,-z
-      const group = new THREE.Group(); group.position.set(w.x1, 0, w.y1); group.rotation.y = -a; group.userData = { id: w.id };
+      const group = new THREE.Group(); group.position.set(w.x1, this.levelY(lvl), w.y1); group.rotation.y = -a; group.userData = { id: w.id };
       const seg = (s0, s1, y0, y1) => { const len = s1 - s0; if (len < 0.005 || y1 - y0 < 0.005) return; const m = new THREE.Mesh(this.geo('box'), mats); m.scale.set(len, y1 - y0, T); m.position.set((s0 + s1) / 2, (y0 + y1) / 2, 0); m.castShadow = true; m.receiveShadow = true; m.userData = { id: w.id }; group.add(m); };
       const ops = P.d.openings.filter(o => o.wallId === w.id).map(o => ({ o, s0: Math.max(0, o.t * L - o.w / 2), s1: Math.min(L, o.t * L + o.w / 2) })).sort((x, y) => x.s0 - y.s0);
       let cur = -T / 2; // تمديد الزوايا
@@ -105,9 +123,10 @@
       const def = CATALOG.BY_ID[it.defId]; if (!def) return; const S = this.project.d.settings;
       let parts; try { parts = CATALOG.BUILD[def.kind](it.w, it.d, it.h, it.c || def.c, it.c2 || def.c2); } catch (e) { parts = CATALOG.BUILD.generic(it.w, it.d, it.h, it.c || def.c); }
       const g = new THREE.Group(); let elev = it.elev || 0; if (def.mount === 'ceiling') elev = S.wallHeight - it.h;
-      g.position.set(it.x, elev, it.y); g.rotation.y = -rad(it.rot); g.userData = { id: it.id };
+      g.position.set(it.x, elev + this.levelY(STATE.fl(it)), it.y); g.rotation.y = -rad(it.rot); g.userData = { id: it.id };
+      const primary = it.c || def.c;
       parts.forEach(p => {
-        const m = new THREE.Mesh(this.geo(p.g, p.seg), this.mat(p.c, { op: p.op, em: p.em, metal: p.metal }));
+        const m = new THREE.Mesh(this.geo(p.g, p.seg), it.finish && p.c === primary && !p.op && !p.em ? this.matFinish(it.finish, primary) : this.mat(p.c, { op: p.op, em: p.em, metal: p.metal }));
         m.position.set(p.p[0], p.p[1], p.p[2]); m.scale.set(p.s[0], p.s[1], p.s[2]); if (p.r) m.rotation.set(p.r[0], p.r[1], p.r[2]);
         m.castShadow = !p.op; m.receiveShadow = true; m.userData = { id: it.id }; g.add(m);
         if (p.em && def.cat === 'lighting' && this.pointLights.length < 10) { const pl = new THREE.PointLight('#ffe9b8', 0, 7, 2); pl.position.set(p.p[0], p.p[1] - 0.05, p.p[2]); g.add(pl); this.pointLights.push(pl); }
@@ -119,7 +138,7 @@
       (this.pointLights || []).forEach(pl => { pl.intensity = n ? 1.4 : 0; }); this.requestRender();
     }
     setNight(v) { this.night = v; this.applyNight(); }
-    focus() { const b = this.project.bounds(); const cx = b.x + b.w / 2, cz = b.y + b.h / 2; const R = Math.max(b.w, b.h, 6); this.controls.target.set(cx, 0.5, cz); this.camera.position.set(cx + R * 0.7, R * 0.8, cz + R * 1.0); this.controls.update(); this.requestRender(); }
+    focus() { const b = this.project.bounds(); const cx = b.x + b.w / 2, cz = b.y + b.h / 2; const nf = this.project.d.floors.length; const R = Math.max(b.w, b.h, 6) + nf * 2; this.controls.target.set(cx, 0.5 + (nf - 1) * 1.5, cz); this.camera.position.set(cx + R * 0.7, R * 0.8, cz + R * 1.0); this.controls.update(); this.requestRender(); }
     topView() { const b = this.project.bounds(); const cx = b.x + b.w / 2, cz = b.y + b.h / 2; this.controls.target.set(cx, 0, cz); this.camera.position.set(cx, Math.max(b.w, b.h) * 1.3 + 4, cz + 0.01); this.controls.update(); this.requestRender(); }
     updateSelection() {
       if (this.selBox) { this.scene.remove(this.selBox); this.selBox = null; }
@@ -138,9 +157,10 @@
       window.addEventListener('keydown', e => { if (this.walk) { this.walkState.keys[e.key.toLowerCase()] = true; if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(e.key.toLowerCase())) e.preventDefault(); } });
       window.addEventListener('keyup', e => { this.walkState.keys[e.key.toLowerCase()] = false; });
     }
+    setOnlyFloor(v) { this.onlyFloor = v; this.build(); }
     setWalk(v) {
       this.walk = v; this.controls.enabled = !v;
-      if (v) { const b = this.project.bounds(); const r = this.project.d.rooms[0]; const ws = this.walkState; ws.pos.set(r ? r.x + r.w / 2 : b.x + b.w / 2, 1.6, r ? r.y + r.h / 2 : b.y + b.h / 2); ws.yaw = 0; ws.pitch = 0; this.camera.fov = 70; } else { this.camera.fov = 55; this.focus(); }
+      if (v) { const P = this.project; const b = P.bounds(P.cur); const r = P.vis.rooms[0]; const ws = this.walkState; const y0 = P.cur * ((P.d.settings.wallHeight || 2.8) + (P.d.settings.slab || 0.3)); ws.pos.set(r ? r.x + r.w / 2 : b.x + b.w / 2, y0 + 1.6, r ? r.y + r.h / 2 : b.y + b.h / 2); ws.yaw = 0; ws.pitch = 0; this.camera.fov = 70; } else { this.camera.fov = 55; this.focus(); }
       this.camera.updateProjectionMatrix(); this.build();
     }
     walkInput(dir, on) { this.walkState.keys['__' + dir] = on; }

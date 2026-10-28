@@ -26,7 +26,7 @@
       this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0); this.W = r.width; this.H = r.height; this.draw();
     }
     fit() {
-      const b = this.project.bounds(); const pad = 1.2;
+      const b = this.project.bounds(this.project.cur); const pad = 1.2;
       const s = Math.min(this.W / (b.w + pad * 2), this.H / (b.h + pad * 2));
       this.view.s = Math.max(8, Math.min(200, s)); this.view.ox = (this.W - b.w * this.view.s) / 2 - b.x * this.view.s; this.view.oy = (this.H - b.h * this.view.s) / 2 - b.y * this.view.s; this.draw();
     }
@@ -41,7 +41,7 @@
 
     // ----- اختبار الإصابة -----
     hit(x, y) {
-      const P = this.project, d = P.d, tol = 8 / this.view.s;
+      const P = this.project, d = P.vis, tol = 8 / this.view.s;
       for (const o of d.openings) { const p = P.openingPos(o); if (p && Math.hypot(p.x - x, p.y - y) < o.w / 2 + tol) return o.id; }
       const items = d.items.slice().reverse(); // الأعلى أولاً
       const order = it => { const def = CATALOG.BY_ID[it.defId] || {}; return def.mount === 'ceiling' ? 0 : def.mount === 'wall' ? 1 : (it.defId.startsWith('rug') || def.kind === 'rug' || def.kind === 'rugRound' ? 3 : 2); };
@@ -52,7 +52,7 @@
     }
     nearestWallPoint(x, y, maxDist) {
       let best = null;
-      for (const w of this.project.d.walls) {
+      for (const w of this.project.vis.walls) {
         const L2 = (w.x2 - w.x1) ** 2 + (w.y2 - w.y1) ** 2; if (!L2) continue;
         let t = ((x - w.x1) * (w.x2 - w.x1) + (y - w.y1) * (w.y2 - w.y1)) / L2; t = Math.max(0, Math.min(1, t));
         const px = w.x1 + (w.x2 - w.x1) * t, py = w.y1 + (w.y2 - w.y1) * t; const dd = Math.hypot(px - x, py - y);
@@ -62,7 +62,7 @@
     }
     snapWallPoint(x, y) {
       let sx = this.snap(x, GRID), sy = this.snap(y, GRID); const tol = 12 / this.view.s;
-      for (const w of this.project.d.walls) for (const [px, py] of [[w.x1, w.y1], [w.x2, w.y2]]) if (Math.hypot(px - x, py - y) < tol) return [px, py];
+      for (const w of this.project.vis.walls) for (const [px, py] of [[w.x1, w.y1], [w.x2, w.y2]]) if (Math.hypot(px - x, py - y) < tol) return [px, py];
       if (this.wallPts.length) { // محاذاة الزوايا
         const [lx, ly] = this.wallPts[this.wallPts.length - 1]; const a = Math.atan2(sy - ly, sx - lx), L = Math.hypot(sx - lx, sy - ly);
         const snapA = Math.round(a / (Math.PI / 4)) * (Math.PI / 4); if (Math.abs(a - snapA) < rad(8)) { sx = this.snap(lx + Math.cos(snapA) * L, GRID); sy = this.snap(ly + Math.sin(snapA) * L, GRID); if (Math.abs(Math.cos(snapA)) < 0.01) sx = lx; if (Math.abs(Math.sin(snapA)) < 0.01) sy = ly; }
@@ -95,7 +95,7 @@
           if (id) { const o = P.find(id), k = P.kindOf(o);
             if (k === 'item') { if (o.locked) { this.drag = null; } else { P.snapshot(); this.drag = { kind: 'item', id, dx: o.x - x, dy: o.y - y, moved: false }; } }
             else if (k === 'opening') { P.snapshot(); this.drag = { kind: 'opening', id }; }
-            else if (k === 'room') { P.snapshot(); this.drag = { kind: 'room', id, dx: o.x - x, dy: o.y - y, walls: P.roomWalls(o).map(w => ({ id: w.id, x1: w.x1, y1: w.y1, x2: w.x2, y2: w.y2 })), items: P.d.items.filter(i => i.x >= o.x && i.x <= o.x + o.w && i.y >= o.y && i.y <= o.y + o.h).map(i => ({ id: i.id, x: i.x, y: i.y })), ox: o.x, oy: o.y }; }
+            else if (k === 'room') { P.snapshot(); this.drag = { kind: 'room', id, dx: o.x - x, dy: o.y - y, walls: P.roomWalls(o).map(w => ({ id: w.id, x1: w.x1, y1: w.y1, x2: w.x2, y2: w.y2 })), items: P.roomItems(o).map(i => ({ id: i.id, x: i.x, y: i.y })), ox: o.x, oy: o.y }; }
             else if (k === 'wall') { P.snapshot(); this.drag = { kind: 'wall', id, sx: x, sy: y, x1: o.x1, y1: o.y1, x2: o.x2, y2: o.y2 }; }
           } else this.drag = { kind: 'pan', sx: e.clientX, sy: e.clientY, ox: this.view.ox, oy: this.view.oy };
           break;
@@ -158,9 +158,10 @@
 
     // ----- الرسم -----
     draw() {
-      const ctx = this.ctx, v = this.view, P = this.project, d = P.d; if (!this.W) return;
+      const ctx = this.ctx, v = this.view, P = this.project, d = P.vis; if (!this.W) return;
       ctx.clearRect(0, 0, this.W, this.H); ctx.fillStyle = '#f7f6f2'; ctx.fillRect(0, 0, this.W, this.H);
       if (this.showGrid) this.drawGrid();
+      if (P.cur > 0) this.drawGhost(P.onFloor(P.cur - 1));
       d.rooms.forEach(r => this.drawRoom(r));
       d.walls.forEach(w => this.drawWall(w));
       d.openings.forEach(o => this.drawOpening(o));
@@ -168,6 +169,12 @@
       d.rooms.forEach(r => this.drawRoomLabel(r));
       if (this.sel) this.drawSelection();
       this.drawToolPreview();
+    }
+    drawGhost(f) { // الطابق الأسفل بشفافية لمحاذاة الجدران
+      const ctx = this.ctx; ctx.save(); ctx.globalAlpha = 0.18;
+      f.rooms.forEach(r => { const [x, y] = this.toScreen(r.x, r.y); ctx.fillStyle = '#9aa5ad'; ctx.fillRect(x, y, r.w * this.view.s, r.h * this.view.s); });
+      f.walls.forEach(w => { const [x1, y1] = this.toScreen(w.x1, w.y1), [x2, y2] = this.toScreen(w.x2, w.y2); ctx.strokeStyle = '#333'; ctx.lineWidth = Math.max(2, w.t * this.view.s); ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); });
+      ctx.restore();
     }
     drawGrid() {
       const ctx = this.ctx, v = this.view; const [x0, y0] = this.toWorld(0, 0), [x1, y1] = this.toWorld(this.W, this.H);
@@ -242,7 +249,7 @@
     }
 
     toDataURL(scale) { // صورة المخطط
-      const b = this.project.bounds(); const s = scale || 80; const pad = 1; const cv = document.createElement('canvas'); cv.width = (b.w + pad * 2) * s; cv.height = (b.h + pad * 2) * s;
+      const b = this.project.bounds(this.project.cur); const s = scale || 80; const pad = 1; const cv = document.createElement('canvas'); cv.width = (b.w + pad * 2) * s; cv.height = (b.h + pad * 2) * s;
       const saved = { ctx: this.ctx, view: { ...this.view }, W: this.W, H: this.H, sel: this.sel, hover: this.hover, mouse: this.mouse };
       this.ctx = cv.getContext('2d'); this.view = { s, ox: (pad - b.x) * s, oy: (pad - b.y) * s }; this.W = cv.width; this.H = cv.height; this.sel = null; this.hover = null; this.mouse = null;
       this.draw(); const url = cv.toDataURL('image/png');

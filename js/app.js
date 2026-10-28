@@ -80,10 +80,10 @@
     if (!o) {
       const s = P.stats(); const cur = P.d.settings.currency;
       body.innerHTML = `<p class="prop-title">${esc(P.d.name)}</p><p class="prop-sub">لا يوجد تحديد — اضغط على عنصر في المخطط</p>
-        <div class="stat-box"><dl><dt>المساحة المبنية</dt><dd>${s.area.toFixed(1)} م²</dd><dt>الغرف</dt><dd>${s.rooms}</dd><dt>الجدران</dt><dd>${P.d.walls.length} (${s.wallLen.toFixed(0)} م)</dd><dt>الأبواب / النوافذ</dt><dd>${s.doors} / ${s.windows}</dd><dt>قطع الأثاث</dt><dd>${s.items}</dd><dt>التكلفة التقديرية</dt><dd>${fmt(s.total)} ${cur}</dd></dl></div>
-        <h4>الغرف</h4><div class="room-list">${P.d.rooms.map(r => `<button class="tb" style="width:100%;margin-bottom:4px;text-align:right" data-room="${r.id}">${esc(r.name)} <small style="color:#6b7280">${(r.w * r.h).toFixed(1)} م²</small></button>`).join('') || '<p class="hint">لا توجد غرف بعد. استخدم أداة ▭ غرفة.</p>'}</div>
+        <div class="stat-box"><dl><dt>المساحة المبنية</dt><dd>${s.area.toFixed(1)} م²</dd><dt>الطوابق / الغرف</dt><dd>${s.floors} / ${s.rooms}</dd><dt>الجدران</dt><dd>${P.d.walls.length} (${s.wallLen.toFixed(0)} م)</dd><dt>الأبواب / النوافذ</dt><dd>${s.doors} / ${s.windows}</dd><dt>قطع الأثاث</dt><dd>${s.items}</dd><dt>التكلفة التقديرية</dt><dd>${fmt(s.total)} ${cur}</dd></dl></div>
+        <h4>الغرف</h4><div class="room-list">${P.d.floors.map((f, i) => { const rs = P.d.rooms.filter(r => STATE.fl(r) === i); return (P.d.floors.length > 1 ? `<div class="floor-head">${esc(f.n)} · ${rs.reduce((a, r) => a + r.w * r.h, 0).toFixed(1)} م²</div>` : '') + rs.map(r => `<button class="tb" style="width:100%;margin-bottom:4px;text-align:right" data-room="${r.id}">${esc(r.name)} <small style="color:#6b7280">${(r.w * r.h).toFixed(1)} م²</small></button>`).join(''); }).join('') || '<p class="hint">لا توجد غرف بعد. استخدم أداة ▭ غرفة.</p>'}</div>
         <h4>تحليل سريع</h4><ul class="tips">${AI.tips(P).slice(0, 5).map(t => `<li>${esc(t)}</li>`).join('')}</ul>`;
-      body.querySelectorAll('[data-room]').forEach(b => b.onclick = () => { editor.select(b.dataset.room); const r = P.find(b.dataset.room); editor.view.ox = editor.W / 2 - (r.x + r.w / 2) * editor.view.s; editor.view.oy = editor.H / 2 - (r.y + r.h / 2) * editor.view.s; editor.draw(); });
+      body.querySelectorAll('[data-room]').forEach(b => b.onclick = () => { const r = P.find(b.dataset.room); if (STATE.fl(r) !== P.cur) { P.setFloor(STATE.fl(r)); renderFloors(); } editor.select(b.dataset.room); editor.view.ox = editor.W / 2 - (r.x + r.w / 2) * editor.view.s; editor.view.oy = editor.H / 2 - (r.y + r.h / 2) * editor.view.s; editor.draw(); });
       return;
     }
     if (k === 'item') {
@@ -94,11 +94,13 @@
         <div class="grid3">${num('w', 'العرض', o.w.toFixed(2), 0.05, 0.05)}${num('d', 'العمق', o.d.toFixed(2), 0.05, 0.05)}${num('h', 'الارتفاع', o.h.toFixed(2), 0.05, 0.02)}</div>
         ${def.mount !== 'ceiling' ? num('elev', 'الارتفاع عن الأرض (م)', (o.elev || 0).toFixed(2), 0.05, 0) : ''}
         <div class="grid2"><label class="field">اللون الأساسي<input type="color" name="c" value="${o.c || def.c}"></label>${def.c2 ? `<label class="field">اللون الثانوي<input type="color" name="c2" value="${o.c2 || def.c2}"></label>` : ''}</div>
+        <label class="field">الخامة في 3D<select name="finish">${STATE.FINISHES.map(f => `<option value="${f.id}" ${(o.finish || '') === f.id ? 'selected' : ''}>${f.n}</option>`).join('')}</select></label>
         <label class="check"><input type="checkbox" name="locked" ${o.locked ? 'checked' : ''}> 🔒 قفل القطعة (لا تتحرك ولا تدور بالخطأ)</label>
         <div class="prop-actions"><button class="tb" data-act="rot90">↻ 90°</button><button class="tb" data-act="flip">⇄ قلب</button><button class="tb" data-act="dup">⧉ نسخ</button><button class="tb" data-act="copy">📋 نسخ للحافظة</button><button class="tb" data-act="reset">↺ الأبعاد الأصلية</button><button class="tb danger" data-act="del">🗑️ حذف</button></div>`;
       const upd = (fn) => { P.snapshot(); fn(); P.emit('change'); };
       body.querySelectorAll('input').forEach(inp => inp.addEventListener('input', () => { const n = inp.name, v = inp.value; if (n === 'locked') { o.locked = inp.checked; P.emit('change'); return; } if (n === 'c' || n === 'c2') { o[n] = v; P.emit('change'); return; } const f = parseFloat(v); if (isNaN(f)) return; if (n === 'rot' || n === 'rotn') { o.rot = ((f % 360) + 360) % 360; body.querySelector('[name=rot]').value = o.rot; body.querySelector('[name=rotn]').value = Math.round(o.rot); } else o[n] = f; P.emit('change'); }));
       body.querySelectorAll('input').forEach(inp => inp.addEventListener('focus', () => P.snapshot()));
+      body.querySelector('[name=finish]').onchange = e => { P.snapshot(); o.finish = e.target.value; P.emit('change'); };
       body.querySelector('[data-act=rot90]').onclick = () => upd(() => { o.rot = (o.rot + 90) % 360; });
       body.querySelector('[data-act=flip]').onclick = () => upd(() => { o.rot = (o.rot + 180) % 360; });
       body.querySelector('[data-act=copy]').onclick = () => { copyItem(o); toast('نُسخت القطعة — Ctrl+V للصق هنا أو في مشروع آخر'); };
@@ -174,6 +176,7 @@
   P.on(kind => {
     editor.draw(); $('#projName').value = P.d.name; refreshMaterialSel();
     if (kind !== 'change' || !app.selected) renderProps(); else renderProps(true);
+    if (kind === 'load' || kind === 'floor' || kind === 'undo' || kind === 'redo') renderFloors();
     if (kind === 'load') { app.selected = null; editor.select(null, true); renderProps(); editor.fit(); readSettings(); }
     if (app.selected && !P.find(app.selected)) { app.selected = null; editor.select(null, true); renderProps(); }
     if (app.mode === '3d' && app.view3d) { clearTimeout(build3dT); build3dT = setTimeout(() => app.view3d.build(), 120); } else app.dirty3d = true;
@@ -181,6 +184,12 @@
     $('#btnUndo').disabled = !P.undo.length; $('#btnRedo').disabled = !P.redo.length;
     clearTimeout(autosaveT); autosaveT = setTimeout(() => { try { localStorage.setItem(AUTOSAVE, JSON.stringify(P.d)); const h = STATE.Store.history(); if (!h[0] || Date.now() - h[0].t > 120000) STATE.Store.pushHistory(P.d, 'auto'); } catch (e) { } }, 800);
   });
+  // ---------- الطوابق ----------
+  function renderFloors() {
+    const sel = $('#floorSel'); sel.innerHTML = P.d.floors.map((f, i) => `<option value="${i}" ${i === P.cur ? 'selected' : ''}>${esc(f.n)}</option>`).join('');
+    $('#btnFloorDel').disabled = P.d.floors.length <= 1; $('#floorBar').classList.toggle('multi', P.d.floors.length > 1);
+  }
+  function switchFloor(i) { P.setFloor(i); app.selected = null; editor.select(null, true); renderFloors(); editor.fit(); renderProps(); if (app.view3d) { if (app.view3d.onlyFloor) app.view3d.build(); else app.view3d.updateSelection(); } $('#stInfo').textContent = `${P.d.floors[P.cur].n} · ${P.totalArea().toFixed(1)} م² · ${P.d.items.length} قطعة`; }
   function readSettings() { const s = P.d.settings; $('#setWallH').value = s.wallHeight; $('#setWallT').value = s.wallThickness; $('#setExt').value = s.exteriorColor; $('#setCur').value = s.currency; $('#setCeiling').checked = !!s.showCeiling; $('#b3Ceiling').classList.toggle('active', !!s.showCeiling); }
 
   // ---------- المشاريع ----------
@@ -224,6 +233,31 @@
   // ---------- التصدير ----------
   function exportJSON() { const data = JSON.stringify(P.d, null, 1); download(fileName('omran.json'), 'data:application/json;charset=utf-8,' + encodeURIComponent(data)); }
   function exportCSV() { const rows = [['العنصر', 'الفئة', 'العرض', 'العمق', 'الارتفاع', 'الغرفة', 'السعر']]; P.d.items.forEach(i => { const def = CATALOG.BY_ID[i.defId] || {}; const r = P.roomAt(i.x, i.y); rows.push([def.n, (CATALOG.CATEGORIES.find(c => c.id === def.cat) || {}).n, i.w, i.d, i.h, r ? r.name : '', def.price || 0]); }); const e = AI.estimate(P); rows.push([]); e.rows.forEach(r => rows.push([r[0], '', '', '', '', '', Math.round(r[1])])); rows.push(['الإجمالي', '', '', '', '', '', Math.round(e.total)]); const csv = '﻿' + rows.map(r => r.map(c => '"' + String(c).replace(/"/g, '""') + '"').join(',')).join('\n'); download(fileName('csv'), 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv)); }
+  // ---------- تقرير PDF مفصّل ----------
+  function buildReport() {
+    const S = P.stats(); const cur = P.d.settings.currency; const est = AI.estimate(P); const saveFloor = P.cur;
+    const plans = P.d.floors.map((f, i) => { P.setFloor(i); const url = editor.toDataURL(50); return { n: f.n, url, rooms: P.d.rooms.filter(r => STATE.fl(r) === i) }; });
+    P.setFloor(saveFloor); editor.draw();
+    const shot = app.view3d ? app.view3d.screenshot() : null;
+    const catName = id => (CATALOG.CATEGORIES.find(c => c.id === id) || {}).n || '';
+    const byRoom = {}; P.d.items.forEach(it => { const r = P.roomAt(it.x, it.y, STATE.fl(it)); const k = r ? r.id : '_'; (byRoom[k] = byRoom[k] || []).push(it); });
+    const roomRows = plans.map(p => p.rooms.map(r => `<tr><td>${esc(p.n)}</td><td>${esc(r.name)}</td><td>${esc(STATE.roomType(r.type).n)}</td><td>${r.w.toFixed(2)} × ${r.h.toFixed(2)}</td><td>${(r.w * r.h).toFixed(2)}</td><td>${esc(MATERIALS.byId(r.floor).n)}</td><td><span class="sw" style="background:${r.wall}"></span> ${r.wall}</td></tr>`).join('')).join('');
+    const furnRows = Object.keys(byRoom).map(k => { const r = k === '_' ? null : P.find(k); const list = byRoom[k]; const sum = list.reduce((a, i) => a + ((CATALOG.BY_ID[i.defId] || {}).price || 0), 0); return `<tr class="grp"><td colspan="5">${r ? esc(r.name) + ' — ' + esc(P.d.floors[STATE.fl(r)].n) : 'خارج الغرف'}</td><td>${fmt(sum)} ${cur}</td></tr>` + list.map(i => { const d = CATALOG.BY_ID[i.defId] || {}; return `<tr><td>${esc(d.n || i.defId)}</td><td>${esc(catName(d.cat))}</td><td>${i.w.toFixed(2)} × ${i.d.toFixed(2)} × ${i.h.toFixed(2)}</td><td><span class="sw" style="background:${i.c || d.c}"></span></td><td>${esc((STATE.FINISHES.find(f => f.id === (i.finish || '')) || {}).n || '')}</td><td>${d.price ? fmt(d.price) + ' ' + cur : '—'}</td></tr>`; }).join(''); }).join('');
+    const html = `<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>تقرير ${esc(P.d.name)} — عمران</title>
+<style>body{font-family:Tajawal,'Segoe UI',Tahoma,Arial,sans-serif;color:#1f2937;margin:0;padding:24px;line-height:1.6}h1{font-size:26px;margin:0 0 4px}h2{font-size:18px;margin:26px 0 8px;border-bottom:2px solid #a5431c;padding-bottom:4px}table{width:100%;border-collapse:collapse;font-size:12.5px}td,th{border:1px solid #d9d9d9;padding:5px 7px;text-align:right;vertical-align:top}th{background:#fbf1ea}tr.grp td{background:#f3f4f6;font-weight:800}.sw{display:inline-block;width:14px;height:14px;border-radius:3px;border:1px solid #999;vertical-align:middle}.meta{color:#5b6470;font-size:13px}.plan{max-width:100%;border:1px solid #ddd;border-radius:8px;margin:6px 0 12px}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0}.stat{border:1px solid #ddd;border-radius:8px;padding:8px 10px}.stat b{display:block;font-size:18px;color:#8f3a16}.btn{position:fixed;top:12px;left:12px;background:#a5431c;color:#fff;border:0;border-radius:10px;padding:10px 16px;font-weight:800;font-size:14px;cursor:pointer}.tips{padding-right:18px}@media print{.btn{display:none}h2{page-break-after:avoid}tr{page-break-inside:avoid}}</style></head><body>
+<button class="btn" onclick="window.print()">🖨️ طباعة / حفظ PDF</button>
+<h1>${esc(P.d.name)}</h1><div class="meta">تقرير مشروع من عمران · ${new Date().toLocaleString('ar-EG')} · ${S.floors} ${S.floors > 1 ? 'طوابق' : 'طابق'} · ${S.rooms} غرف · ${S.items} قطعة</div>
+<div class="stats"><div class="stat"><b>${S.area.toFixed(1)} م²</b>المساحة المبنية</div><div class="stat"><b>${S.wallLen.toFixed(0)} م</b>طول الجدران</div><div class="stat"><b>${S.doors} / ${S.windows}</b>أبواب / نوافذ</div><div class="stat"><b>${fmt(S.total)} ${cur}</b>التكلفة التقديرية</div></div>
+${plans.map(p => `<h2>مخطط ${esc(p.n)}</h2><img class="plan" src="${p.url}" alt="مخطط ${esc(p.n)}">`).join('')}
+${shot ? `<h2>العرض ثلاثي الأبعاد</h2><img class="plan" src="${shot}" alt="عرض ثلاثي الأبعاد">` : ''}
+<h2>الغرف</h2><table><tr><th>الطابق</th><th>الغرفة</th><th>النوع</th><th>الأبعاد (م)</th><th>المساحة (م²)</th><th>الأرضية</th><th>الدهان</th></tr>${roomRows || '<tr><td colspan="7">لا غرف</td></tr>'}</table>
+<h2>قائمة الأثاث والأجهزة</h2><table><tr><th>القطعة</th><th>الفئة</th><th>الأبعاد (م)</th><th>اللون</th><th>الخامة</th><th>السعر</th></tr>${furnRows || '<tr><td colspan="6">لا أثاث</td></tr>'}</table>
+<h2>تقدير التكلفة</h2><table>${est.rows.map(r => `<tr><td>${esc(r[0])}</td><td>${fmt(r[1])} ${cur}</td></tr>`).join('')}${S.slabs ? `<tr><td>بلاطات الأدوار العليا</td><td>${fmt(S.slabs)} ${cur}</td></tr>` : ''}<tr class="grp"><td>الإجمالي التقديري</td><td>${fmt(est.total)} ${cur}</td></tr></table><p class="meta">الأسعار تقديرية لأغراض التخطيط ولا تغني عن عروض أسعار حقيقية.</p>
+<h2>ملاحظات التصميم</h2><ul class="tips">${AI.tips(P).map(t => `<li>${esc(t)}</li>`).join('')}</ul>
+<p class="meta">أُنشئ بواسطة عمران — مجاني ومفتوح المصدر.</p></body></html>`;
+    const w = window.open('', '_blank'); if (!w) { toast('المتصفح منع فتح نافذة التقرير — اسمح بالنوافذ المنبثقة'); return; }
+    w.document.open(); w.document.write(html); w.document.close(); toast('فُتح التقرير في تبويب جديد — اطبعه أو احفظه PDF');
+  }
   function showShot(url, name) { $('#shotImg').src = url; $('#shotDl').href = url; $('#shotDl').download = name; closeModals(); openModal('#mShot'); }
   function shareLink() { try { const json = JSON.stringify(P.d); const b64 = btoa(unescape(encodeURIComponent(json))); const url = location.origin + location.pathname + '#p=' + b64; if (url.length > 60000) { toast('المشروع كبير جداً للرابط — استخدم تصدير JSON'); return; } (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject()).then(() => toast('تم نسخ الرابط ✓ (يحتوي المشروع كاملاً)')).catch(() => prompt('انسخ الرابط:', url)); } catch (e) { toast('تعذّر إنشاء الرابط'); } }
   function loadFromHash() { if (location.hash.startsWith('#p=')) { try { const json = decodeURIComponent(escape(atob(location.hash.slice(3)))); P.load(JSON.parse(json)); history.replaceState(null, '', location.pathname); toast('تم فتح المشروع من الرابط'); return true; } catch (e) { console.warn(e); } } return false; }
@@ -269,6 +303,12 @@
     $('#exPng2d').onclick = () => showShot(editor.toDataURL(80), fileName('2d.png'));
     $('#exPng3d').onclick = () => { if (!app.view3d) { setMode('3d'); } setTimeout(() => showShot(app.view3d.screenshot(), fileName('3d.png')), 200); };
     $('#exJson').onclick = () => { exportJSON(); closeModals(); toast('تم تنزيل ملف المشروع'); }; $('#exCsv').onclick = () => { exportCSV(); closeModals(); toast('تم تنزيل قائمة الأثاث'); }; $('#exPrint').onclick = () => { closeModals(); setTimeout(() => window.print(), 100); }; $('#exLink').onclick = shareLink;
+    $('#floorSel').onchange = e => switchFloor(+e.target.value);
+    $('#btnFloorAdd').onclick = () => { P.snapshot(); const i = P.addFloor(); switchFloor(i); P.emit('floor'); toast('أُضيف ' + P.d.floors[i].n + ' — ارسم غرفه فوق شبح الدور الأسفل'); };
+    $('#btnFloorDup').onclick = () => { P.snapshot(); const i = P.duplicateFloor(P.cur); switchFloor(i); P.emit('floor'); toast('نُسخ الدور إلى ' + P.d.floors[i].n); };
+    $('#btnFloorDel').onclick = () => { if (P.d.floors.length <= 1) return; if (!confirm('حذف «' + P.d.floors[P.cur].n + '» بكل غرفه وأثاثه؟ (يمكن التراجع)')) return; P.snapshot(); P.removeFloor(P.cur); switchFloor(P.cur); P.emit('floor'); };
+    $('#b3Only').onclick = e => { app.view3d.setOnlyFloor(!app.view3d.onlyFloor); e.currentTarget.classList.toggle('active', app.view3d.onlyFloor); };
+    $('#exReport').onclick = () => { closeModals(); buildReport(); };
     $('#btnCustomItem').onclick = () => openModal('#mCustom'); $('#customForm').onsubmit = e => { e.preventDefault(); createCustomItem(e.target); };
     $('#btnImport').onclick = () => $('#fileImport').click(); $('#fileImport').onchange = e => { const f = e.target.files[0]; if (!f) return; const rd = new FileReader(); rd.onload = () => { try { const d = JSON.parse(rd.result); if (!d.rooms || !d.walls) throw 0; delete d.pid; P.load(d); closeModals(); toast('تم الاستيراد ✓'); } catch (err) { toast('ملف غير صالح'); } }; rd.readAsText(f); e.target.value = ''; };
     // الجوال
@@ -294,7 +334,7 @@
     if (c.def && !CATALOG.BY_ID[c.def.id]) { P.addCustomDef(c.def); renderCatalog(); } else if (c.def && !(P.d.customDefs || []).some(d => d.id === c.def.id)) { P.d.customDefs.push(c.def); renderCatalog(); }
     if (!CATALOG.BY_ID[c.item.defId]) { toast('القطعة غير معروفة في هذا الإصدار'); return; }
     const m = editor.mouse; const [x, y] = m ? [editor.snap(m[0]), editor.snap(m[1])] : [c.item.x + 0.4, c.item.y + 0.4];
-    P.snapshot(); const it = P.addItem(c.item.defId, x, y, c.item.rot, { w: c.item.w, d: c.item.d, h: c.item.h, c: c.item.c, c2: c.item.c2, elev: c.item.elev }); P.emit('change'); editor.select(it.id); toast('تم اللصق');
+    P.snapshot(); const it = P.addItem(c.item.defId, x, y, c.item.rot, { w: c.item.w, d: c.item.d, h: c.item.h, c: c.item.c, c2: c.item.c2, elev: c.item.elev, finish: c.item.finish || '' }); P.emit('change'); editor.select(it.id); toast('تم اللصق');
   }
   function createCustomItem(form) {
     const f = new FormData(form); const def = { n: String(f.get('n')).trim().slice(0, 40), w: +f.get('w'), d: +f.get('d'), h: +f.get('h'), kind: f.get('kind'), mount: f.get('mount'), c: f.get('c'), price: +f.get('price') || 0, elev: f.get('mount') === 'wall' ? 1.0 : 0 };
@@ -306,7 +346,7 @@
   // ---------- البدء ----------
   function init() {
     editor = new Editor2D($('#c2d'), P, app); app.editor = editor; window.OMRAN = { P, app, editor };
-    renderCatalog(); renderMaterials(); renderTemplates(); renderStyles(); bind(); readSettings();
+    renderCatalog(); renderMaterials(); renderTemplates(); renderStyles(); bind(); readSettings(); renderFloors();
     let loaded = loadFromHash();
     if (!loaded) { try { const a = localStorage.getItem(AUTOSAVE); if (a) { const d = JSON.parse(a); if (d && (d.rooms.length || d.walls.length || d.items.length)) { P.load(d); loaded = true; } } } catch (e) { } }
     if (!loaded) { P.emit('load'); renderSaved(); openModal('#mProjects'); }

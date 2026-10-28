@@ -26,12 +26,12 @@ feature,area,priority,original,clone,notes
 مصمم ذكي: تأثيث غرفة تلقائياً حسب النمط,ai,should,yes,yes,AI Designer / Smart Wizard
 مصمم ذكي: توليد مخطط كامل من معايير,ai,should,yes,yes,Design Generator
 مكتبة أنماط (Styles) تُطبَّق على الغرف,ai,should,yes,yes,10 أنماط
-طوابق متعددة,editor,should,yes,no,الأصلي يدعم floors؛ غير مبني بعد
+طوابق متعددة,editor,should,yes,yes,شريط طوابق: إضافة/نسخ/حذف، شبح الدور الأسفل، تراصّ في 3D مع بلاطات
 رندر فوتوغرافي عالي الجودة,3d,should,yes,partial,لقطة WebGL بظلال؛ لا path tracing
-تقرير PDF للمشروع,export,should,yes,partial,طباعة المتصفح إلى PDF
+تقرير PDF للمشروع,export,should,yes,yes,تقرير مفصّل: مخطط كل طابق، لقطة 3D، جداول الغرف والأثاث والتكلفة
 مشاركة المشروع برابط,sharing,should,yes,yes,الرابط يحمل المشروع كاملاً
 تصميم خارجي (حديقة ومسبح وأشجار),catalog,should,yes,yes,فئة الحديقة والخارج
-تخصيص القطعة بمواد/قوام بدل اللون فقط,catalog,should,yes,partial,لونان فقط
+تخصيص القطعة بمواد/قوام بدل اللون فقط,catalog,should,yes,yes,8 خامات (خشب فاتح/داكن، رخام، حجر، قماش، معدن، زجاج، خرسانة) في 3D
 نسخ ولصق بين المشاريع,editor,should,yes,yes,Ctrl+C / Ctrl+V عبر حافظة محلية تحمل القطعة المخصصة أيضاً
 قفل القطع ومنع تحريكها,editor,should,yes,yes,خانة قفل في الخصائص + شارة على المخطط
 حساب مستخدم ومزامنة سحابية,account,should,yes,no,غير مطلوب للعمل؛ انظر architecture.md

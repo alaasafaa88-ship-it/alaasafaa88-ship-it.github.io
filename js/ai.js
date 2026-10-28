@@ -31,7 +31,7 @@
   function blocked(P, room) {
     const out = { top: [], bottom: [], left: [], right: [] }; const eps = 0.3;
     P.d.openings.forEach(o => {
-      const p = P.openingPos(o); if (!p) return; const margin = P.isDoor(o) ? o.w / 2 + 0.6 : o.w / 2 + 0.05; const isDoor = P.isDoor(o);
+      const p = P.openingPos(o); if (!p || STATE.fl(p.wall) !== STATE.fl(room)) return; const margin = P.isDoor(o) ? o.w / 2 + 0.6 : o.w / 2 + 0.05; const isDoor = P.isDoor(o);
       if (p.x < room.x - eps || p.x > room.x + room.w + eps || p.y < room.y - eps || p.y > room.y + room.h + eps) return;
       const push = (side, along) => out[side].push({ a: along - margin, b: along + margin, door: isDoor, win: !isDoor, c: along, w: o.w });
       if (Math.abs(p.y - room.y) < eps) push('top', p.x - room.x); else if (Math.abs(p.y - room.y - room.h) < eps) push('bottom', p.x - room.x);
@@ -182,8 +182,8 @@
 
   function furnish(P, room, styleId, keepExisting) {
     const st = style(styleId);
-    if (!keepExisting) P.d.items = P.d.items.filter(i => !(i.x > room.x && i.x < room.x + room.w && i.y > room.y && i.y < room.y + room.h));
-    const F = new Furnisher(P, room, st); const fn = ROOM_PLANS[room.type] || ROOM_PLANS.other; fn(F);
+    if (!keepExisting) { const rm = new Set(P.roomItems(room).map(i => i.id)); P.d.items = P.d.items.filter(i => !rm.has(i.id)); }
+    const save = P.d.currentFloor; P.d.currentFloor = STATE.fl(room); const F = new Furnisher(P, room, st); const fn = ROOM_PLANS[room.type] || ROOM_PLANS.other; fn(F); P.d.currentFloor = save;
     // قصّ العناصر الخارجة عن الغرفة قليلاً
     F.placed.forEach(it => { const def = CATALOG.BY_ID[it.defId]; if (def.mount !== 'floor') return; const hw = (it.rot % 180 === 0 ? it.w : it.d) / 2, hd = (it.rot % 180 === 0 ? it.d : it.w) / 2; it.x = Math.max(room.x + hw + 0.05, Math.min(room.x + room.w - hw - 0.05, it.x)); it.y = Math.max(room.y + hd + 0.05, Math.min(room.y + room.h - hd - 0.05, it.y)); });
     return F.placed.length;
@@ -227,7 +227,7 @@
   // ---------- تقدير التكلفة ----------
   function estimate(P) {
     const s = P.stats(); const cur = P.d.settings.currency || '$';
-    const rows = [['الأثاث والأجهزة (' + s.items + ' عنصر)', s.furniture], ['الأرضيات (' + s.area.toFixed(1) + ' م²)', s.flooring], ['بناء الجدران (' + s.wallLen.toFixed(1) + ' م طولي)', s.walls], ['الدهان (' + (s.wallArea * 2).toFixed(0) + ' م² وجهان)', s.paint], ['الأبواب والنوافذ (' + s.doors + ' باب، ' + s.windows + ' نافذة)', s.openings]];
+    const rows = [['الأثاث والأجهزة (' + s.items + ' عنصر)', s.furniture], ['الأرضيات (' + s.area.toFixed(1) + ' م²)', s.flooring], ['بناء الجدران (' + s.wallLen.toFixed(1) + ' م طولي)', s.walls], ['الدهان (' + (s.wallArea * 2).toFixed(0) + ' م² وجهان)', s.paint], ['الأبواب والنوافذ (' + s.doors + ' باب، ' + s.windows + ' نافذة)', s.openings]]; if (s.slabs) rows.push(['بلاطات الأدوار العليا', s.slabs]);
     return { rows, total: s.total, cur, stats: s };
   }
 
@@ -235,7 +235,7 @@
   function tips(P) {
     const out = []; const d = P.d;
     d.rooms.forEach(r => {
-      const A = r.w * r.h; const items = d.items.filter(i => i.x > r.x && i.x < r.x + r.w && i.y > r.y && i.y < r.y + r.h);
+      const A = r.w * r.h; const items = P.roomItems(r);
       const doors = d.openings.filter(o => P.isDoor(o) && P.roomWalls(r).some(w => w.id === o.wallId)); const wins = d.openings.filter(o => !P.isDoor(o) && P.roomWalls(r).some(w => w.id === o.wallId));
       if (!doors.length && r.type !== 'garden' && r.type !== 'hall' && r.type !== 'balcony') out.push(`🚪 «${r.name}» بدون باب — أضف باباً من أداة الأبواب.`);
       if (!wins.length && !['bathroom', 'hall', 'storage', 'garage', 'garden', 'balcony', 'laundry'].includes(r.type)) out.push(`🪟 «${r.name}» بدون نافذة — الإضاءة الطبيعية تحسّن الراحة وتقلل استهلاك الكهرباء.`);
@@ -271,7 +271,7 @@
       resp.actions.push({ type: 'generate', opts }); resp.text = `جاري توليد ${opts.name} بنمط ${style(opts.style).n}: ${bed} غرف نوم، ${bath} حمام${opts.majlis ? '، مجلس' : ''}${opts.dining ? '، غرفة طعام' : ''}${opts.office ? '، مكتب' : ''}${opts.garden ? '، حديقة' : ''}. يمكنك تعديل أي شيء بعد ذلك.`; return resp;
     }
     if (want('أثث', 'أثّث', 'اثث', 'فرش', 'فرّش', 'جهز', 'جهّز')) {
-      let room = roomType ? P.d.rooms.find(r => r.type === roomType) : (ctx.selectedRoom || null);
+      let room = roomType ? (P.vis.rooms.find(r => r.type === roomType) || P.d.rooms.find(r => r.type === roomType)) : (ctx.selectedRoom || null);
       if (/(^|\s)(كل|جميع|كامل)(\s|$)/.test(t)) { resp.actions.push({ type: 'furnishAll', style: styleId || ctx.style }); resp.text = `جاري تأثيث جميع الغرف بنمط ${style(styleId || ctx.style).n}.`; return resp; }
       if (!room) { resp.text = roomType ? 'لم أجد غرفة من هذا النوع في المخطط. ارسمها أولاً أو حدّد غرفة.' : 'حدّد غرفة في المخطط (اضغط عليها) أو اذكر اسمها، مثال: «أثّث المطبخ».'; return resp; }
       resp.actions.push({ type: 'furnish', roomId: room.id, style: styleId || ctx.style }); resp.text = `تم تأثيث «${room.name}» بنمط ${style(styleId || ctx.style).n}. غيّر النمط أو حرّك القطع كما تحب.`; return resp;
