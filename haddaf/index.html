@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>هدّاف - لعبة تسديد كرة القدم</title>
+<meta name="description" content="لعبة كرة قدم عربية: ارسم مسار الكرة بإصبعك، التفّ حول المدافعين، مرّر لزملائك وسجّل أهدافاً خيالية عبر عشرات المستويات. تعمل في المتصفح وبدون إنترنت.">
+<meta name="theme-color" content="#0b1f14">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="هدّاف">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/game.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- الشاشة الرئيسية -->
+  <section class="screen screen--home" id="screen-home">
+    <div class="home__top">
+      <div class="hearts" id="hearts-home" aria-live="polite"></div>
+      <button class="iconbtn" id="btn-settings" type="button" aria-label="الإعدادات">⚙️</button>
+    </div>
+    <div class="home__hero">
+      <div class="logo" aria-hidden="true">
+        <span class="logo__ball">⚽</span>
+      </div>
+      <h1 class="home__title">هدّاف</h1>
+      <p class="home__tag">ارسم مسار الكرة… وسجّل أهدافاً لا تُنسى</p>
+    </div>
+    <div class="home__card">
+      <div class="home__hero-name"><span id="home-hero-name">البطل</span> <span class="kit" id="home-kit"></span></div>
+      <div class="home__stats">
+        <div><b id="home-points">0</b><span>نقطة</span></div>
+        <div><b id="home-stars">0</b><span>نجمة</span></div>
+        <div><b id="home-cash">0</b><span>💰 نقود</span></div>
+        <div><b id="home-level">1</b><span>المستوى</span></div>
+      </div>
+    </div>
+    <div class="home__actions">
+      <button class="btn btn--big" id="btn-play" type="button">▶ العب</button>
+      <div class="home__row">
+        <button class="btn btn--ghost" id="btn-levels" type="button">المستويات</button>
+        <button class="btn btn--ghost" id="btn-stats" type="button">🏆 الإحصاءات</button>
+      </div>
+    </div>
+    <p class="home__foot">يعمل بدون إنترنت • تقدّمك محفوظ على جهازك</p>
+  </section>
+
+  <!-- اختيار المستوى -->
+  <section class="screen screen--levels" id="screen-levels" hidden>
+    <header class="topbar">
+      <button class="iconbtn" data-nav="home" type="button" aria-label="رجوع">→</button>
+      <h2>المستويات</h2>
+      <div class="hearts hearts--small" id="hearts-levels"></div>
+    </header>
+    <div class="levels" id="levels-grid"></div>
+  </section>
+
+  <!-- الإعدادات -->
+  <section class="screen screen--settings" id="screen-settings" hidden>
+    <header class="topbar">
+      <button class="iconbtn" data-nav="home" type="button" aria-label="رجوع">→</button>
+      <h2>الإعدادات</h2>
+      <span></span>
+    </header>
+    <div class="settings">
+      <label class="field">
+        <span>اسم البطل</span>
+        <input class="input" id="set-name" maxlength="16" placeholder="اكتب اسمك">
+      </label>
+      <canvas class="hero-preview" id="hero-preview" width="120" height="120" aria-hidden="true"></canvas>
+      <div class="field">
+        <span>لون القميص</span>
+        <div class="kits" id="set-kits"></div>
+      </div>
+      <div class="field">
+        <span>لون البشرة</span>
+        <div class="kits" id="set-skins"></div>
+      </div>
+      <div class="field">
+        <span>لون الشعر</span>
+        <div class="kits" id="set-hairs"></div>
+      </div>
+      <label class="field field--row">
+        <span>الأصوات</span>
+        <input type="checkbox" id="set-sound" class="switch">
+      </label>
+      <label class="field field--row">
+        <span>الحركة البطيئة قرب المرمى</span>
+        <input type="checkbox" id="set-slowmo" class="switch">
+      </label>
+      <button class="btn btn--danger" id="set-reset" type="button">مسح التقدّم</button>
+      <p class="settings__about">هدّاف لعبة ويب مجانية. ارسم خطاً من الكرة نحو المرمى، كلما طال الخط زادت القوة والارتفاع، والخط المنحني يصنع كرة ملتفّة.</p>
+    </div>
+  </section>
+
+  <!-- الإحصاءات والكؤوس -->
+  <section class="screen screen--stats" id="screen-stats" hidden>
+    <header class="topbar">
+      <button class="iconbtn" data-nav="home" type="button" aria-label="رجوع">→</button>
+      <h2>الإحصاءات والكؤوس</h2>
+      <span></span>
+    </header>
+    <div class="stats">
+      <p class="stats__rate" id="stats-rate"></p>
+      <div class="trophies" id="stats-trophies"></div>
+      <ul class="stats__list" id="stats-list"></ul>
+    </div>
+  </section>
+
+  <!-- اللعب -->
+  <section class="screen screen--play" id="screen-play" hidden>
+    <canvas id="pitch"></canvas>
+    <div class="hud">
+      <button class="iconbtn hud__btn" id="btn-pause" type="button" aria-label="قائمة">☰</button>
+      <div class="hud__level"><span id="hud-season"></span><b id="hud-level"></b></div>
+      <div class="hud__touches" id="hud-touches" title="اللمسات"></div>
+      <div class="hearts hearts--small" id="hearts-play"></div>
+    </div>
+    <div class="scoreboard" id="scoreboard"></div>
+    <div class="hint" id="hint" hidden></div>
+    <div class="meter" id="meter" hidden>
+      <div class="meter__bar"><i id="meter-power"></i></div>
+      <span id="meter-label">القوة</span>
+    </div>
+    <div class="banner" id="banner" hidden></div>
+    <div class="objective" id="objective"></div>
+  </section>
+
+  <!-- نافذة منبثقة -->
+  <div class="modal" id="modal" hidden>
+    <div class="modal__sheet" role="dialog" aria-modal="true">
+      <div class="modal__body" id="modal-body"></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</div>
+<script src="js/game.js" defer></script>
+</body>
+</html>
