@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>عمران — صمّم بيتك ثلاثي الأبعاد بالعربي</title>
+<meta name="description" content="صمّم منزلك بالعربي: مخطط ثنائي الأبعاد، عرض ثلاثي الأبعاد، كتالوج أثاث ضخم، ومصمم ذكي يؤثث الغرف ويولّد المخططات تلقائياً.">
+<meta name="theme-color" content="#a5431c">
+<meta property="og:title" content="عمران — صمّم بيتك ثلاثي الأبعاد بالعربي">
+<meta property="og:description" content="مخطط 2D وعرض 3D وكتالوج كامل مجاني ومصمم ذكي، بلا حساب وبدون إنترنت.">
+<meta property="og:image" content="assets/landing-shot.png">
+<meta property="og:type" content="website">
+
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="assets/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="app">
+  <header id="topbar">
+    <div class="brand" id="brand" title="عمران"><span class="logo"><svg viewBox="0 0 512 512" aria-hidden="true"><path d="M128 400V236c0-70 57-128 128-128s128 58 128 128v164" fill="none" stroke="#fff" stroke-width="40" stroke-linecap="round"/><path d="M96 400h320" stroke="#fff" stroke-width="36" stroke-linecap="round"/></svg></span><span class="brand-name">عمران</span></div>
+    <input id="projName" class="proj-name" value="مشروع جديد" title="اسم المشروع" aria-label="اسم المشروع">
+    <div class="tb-group">
+      <button class="tb" id="btnUndo" title="تراجع (Ctrl+Z)">↶</button>
+      <button class="tb" id="btnRedo" title="إعادة (Ctrl+Y)">↷</button>
+    </div>
+    <div class="view-toggle" role="tablist">
+      <button id="btn2d" class="active" role="tab">📐 مخطط 2D</button>
+      <button id="btn3d" role="tab">🏠 عرض 3D</button>
+    </div>
+    <div class="tb-group" id="floorBar"><select id="floorSel" title="الطابق الحالي" aria-label="الطابق الحالي"></select><button class="tb" id="btnFloorAdd" title="إضافة طابق">＋ <span class="lbl">طابق</span></button><button class="tb" id="btnFloorDup" title="نسخ هذا الطابق إلى طابق جديد">⧉</button><button class="tb danger" id="btnFloorDel" title="حذف هذا الطابق">✕</button></div>
+    <div class="tb-group grow"></div>
+    <div class="tb-group">
+      <button class="tb primary" id="btnAI">✨ المصمم الذكي</button>
+      <button class="tb" id="btnSave" title="حفظ (Ctrl+S)">💾 <span class="lbl">حفظ</span></button>
+      <button class="tb" id="btnProjects">📁 <span class="lbl">مشاريعي</span></button>
+      <button class="tb" id="btnExport">⬇ <span class="lbl">تصدير</span></button>
+      <button class="tb" id="btnHelp" title="مساعدة">؟</button>
+    </div>
+  </header>
+
+  <main id="main">
+    <!-- الشريط الجانبي: الكتالوج والأدوات والمواد -->
+    <aside id="sidebar" class="panel">
+      <div class="tabs" id="sideTabs">
+        <button data-tab="catalog" class="active">🛋️ الكتالوج</button>
+        <button data-tab="tools">🛠️ الأدوات</button>
+        <button data-tab="materials">🎨 المواد</button>
+        <button data-tab="settings">⚙️</button>
+      </div>
+      <div class="tab-body" id="tab-catalog">
+        <div class="search-row"><input id="catSearch" placeholder="ابحث عن قطعة أثاث… (مثال: سرير، ثلاجة)" aria-label="بحث"><span class="count" id="catCount"></span></div>
+        <div class="chips" id="catChips"></div>
+        <div class="items-grid" id="catItems"></div>
+        <div class="custom-row"><button class="tb" id="btnCustomItem">➕ قطعة مخصصة بأبعادك</button></div>
+        <p class="hint">اضغط على القطعة ثم اضغط في المخطط لوضعها. اضغط «+» لإضافتها في وسط الشاشة مباشرة. لم تجد قطعتك؟ أنشئها بأبعادها الحقيقية من «قطعة مخصصة».</p>
+      </div>
+      <div class="tab-body" id="tab-tools" hidden>
+        <h4>أدوات الرسم</h4>
+        <div class="tool-list">
+          <button class="tool active" data-tool="select"><b>⬚</b> تحديد وتحريك <kbd>V</kbd></button>
+          <button class="tool" data-tool="pan"><b>✋</b> تحريك العرض <kbd>H</kbd></button>
+          <button class="tool" data-tool="room"><b>▭</b> رسم غرفة (اسحب مستطيلاً) <kbd>G</kbd></button>
+          <button class="tool" data-tool="wall"><b>━</b> رسم جدار (نقطة فنقطة) <kbd>W</kbd></button>
+          <button class="tool" data-tool="door"><b>🚪</b> باب (اضغط على جدار) <kbd>D</kbd></button>
+          <button class="tool" data-tool="window"><b>🪟</b> نافذة (اضغط على جدار) <kbd>N</kbd></button>
+          <button class="tool" data-tool="measure"><b>📏</b> قياس مسافة <kbd>M</kbd></button>
+          <button class="tool" data-tool="delete"><b>🗑️</b> حذف بالنقر <kbd>X</kbd></button>
+        </div>
+        <label class="field">نوع الغرفة الجديدة <select id="roomTypeSel"></select></label>
+        <label class="field">نوع الباب <select id="doorTypeSel"></select></label>
+        <label class="field">نوع النافذة <select id="windowTypeSel"></select></label>
+        <h4>العرض</h4>
+        <div class="row">
+          <button class="tb" id="btnZoomIn">＋ تكبير</button><button class="tb" id="btnZoomOut">－ تصغير</button><button class="tb" id="btnFit">⤢ ملاءمة</button>
+        </div>
+        <label class="check"><input type="checkbox" id="chkGrid" checked> إظهار الشبكة</label>
+        <label class="check"><input type="checkbox" id="chkLabels" checked> إظهار الأسماء والأبعاد</label>
+        <label class="check"><input type="checkbox" id="chkKeep"> وضع متكرر (إبقاء أداة الوضع بعد كل قطعة)</label>
+        <h4>اختصارات</h4>
+        <ul class="shortcuts">
+          <li><kbd>R</kbd> تدوير 90° &nbsp; <kbd>Shift+R</kbd> 45°</li><li><kbd>Delete</kbd> حذف المحدد</li><li><kbd>Ctrl+D</kbd> نسخ المحدد</li><li><kbd>Ctrl+C</kbd> / <kbd>Ctrl+V</kbd> نسخ ولصق (حتى بين المشاريع)</li><li><kbd>الأسهم</kbd> تحريك دقيق</li><li><kbd>Esc</kbd> إلغاء الأداة</li><li>عجلة الماوس: تكبير · زر الماوس الأوسط/الأيمن: تحريك</li>
+        </ul>
+      </div>
+      <div class="tab-body" id="tab-materials" hidden>
+        <h4>الأرضيات <small id="matTarget">— تُطبّق على الغرفة المحددة</small></h4>
+        <div class="mat-grid" id="floorGrid"></div>
+        <h4>دهان الجدران</h4>
+        <div class="paint-grid" id="paintGrid"></div>
+        <label class="field">لون مخصص <input type="color" id="paintCustom" value="#f5f1e8"></label>
+        <label class="check"><input type="checkbox" id="chkAllRooms"> تطبيق على جميع الغرف</label>
+      </div>
+      <div class="tab-body" id="tab-settings" hidden>
+        <h4>إعدادات المشروع</h4>
+        <label class="field">ارتفاع الجدران (م) <input type="number" id="setWallH" step="0.1" min="2" max="6"></label>
+        <label class="field">سماكة الجدران (م) <input type="number" id="setWallT" step="0.05" min="0.05" max="0.6"></label>
+        <label class="field">لون الواجهة الخارجية <input type="color" id="setExt"></label>
+        <label class="field">رمز العملة <input id="setCur" maxlength="6"></label>
+        <label class="check"><input type="checkbox" id="setCeiling"> إظهار الأسقف في 3D</label>
+        <h4>البيانات</h4>
+        <div class="row"><button class="tb" id="btnClearItems">🧹 حذف كل الأثاث</button><button class="tb danger" id="btnClearAll">🗑️ مسح المشروع</button></div>
+        <p class="hint">تُحفظ مشاريعك محلياً في متصفحك (لا تُرفع لأي خادم). استخدم «تصدير JSON» لنسخة احتياطية.</p>
+        <p class="hint">عمران — الإصدار 1.0 · مجاني ومفتوح المصدر · <a href="landing.html">عن التطبيق</a> · <a href="privacy.html">الخصوصية</a></p>
+      </div>
+    </aside>
+
+    <!-- مساحة العمل -->
+    <section id="workspace">
+      <div id="floatTools">
+        <button class="ft active" data-tool="select" title="تحديد">⬚</button>
+        <button class="ft" data-tool="pan" title="تحريك">✋</button>
+        <button class="ft" data-tool="room" title="غرفة">▭</button>
+        <button class="ft" data-tool="wall" title="جدار">━</button>
+        <button class="ft" data-tool="door" title="باب">🚪</button>
+        <button class="ft" data-tool="window" title="نافذة">🪟</button>
+        <button class="ft" data-tool="measure" title="قياس">📏</button>
+        <span class="sep"></span>
+        <button class="ft" id="ftFit" title="ملاءمة">⤢</button>
+        <button class="ft" id="ftZoomIn" title="تكبير">＋</button>
+        <button class="ft" id="ftZoomOut" title="تصغير">－</button>
+      </div>
+      <canvas id="c2d" aria-label="مخطط المنزل"></canvas>
+      <div id="v3d" hidden>
+        <div id="tools3d">
+          <button class="ft active" id="b3Orbit" title="دوران">🔄</button>
+          <button class="ft" id="b3Walk" title="تجوّل داخل المنزل">🚶</button>
+          <button class="ft" id="b3Top" title="من الأعلى">⬇</button>
+          <button class="ft" id="b3Focus" title="تركيز">🎯</button>
+          <span class="sep"></span>
+          <button class="ft" id="b3Night" title="ليل/نهار">🌙</button>
+          <button class="ft" id="b3Ceiling" title="الأسقف">🏠</button>
+          <button class="ft" id="b3Only" title="إظهار الطابق الحالي فقط">🏢</button>
+          <button class="ft" id="b3Shot" title="التقاط صورة">📷</button>
+        </div>
+        <div id="walkPad" hidden>
+          <div class="pad-row"><button data-k="tl">↺</button><button data-k="f">▲</button><button data-k="tr">↻</button></div>
+          <div class="pad-row"><button data-k="l">◀</button><button data-k="b">▼</button><button data-k="r">▶</button></div>
+          <p>اسحب على الشاشة للنظر · W A S D للمشي</p>
+        </div>
+      </div>
+      <div id="status"><span id="stCoords">x: 0.00 · y: 0.00</span><span id="stInfo"></span><span id="stHint">اختر أداة أو قطعة من الكتالوج</span></div>
+      <div id="placeBanner" hidden><span id="placeName"></span><button id="placeCancel">إلغاء ✕</button></div>
+    </section>
+
+    <!-- الخصائص -->
+    <aside id="props" class="panel"><div id="propsBody"></div></aside>
+  </main>
+
+  <nav id="mobileNav">
+    <button data-nav="catalog">🛋️<span>الكتالوج</span></button>
+    <button data-nav="tools">🛠️<span>الأدوات</span></button>
+    <button data-nav="view" id="mnView">🏠<span>3D</span></button>
+    <button data-nav="ai">✨<span>الذكي</span></button>
+    <button data-nav="props">⚙️<span>الخصائص</span></button>
+  </nav>
+</div>
+
+<!-- النوافذ المنبثقة -->
+<div class="modal" id="mProjects" hidden>
+  <div class="modal-box wide">
+    <div class="modal-head"><h3>🏠 عمران — مشاريعك</h3><button class="close" data-close>✕</button></div>
+    <div class="tabs small"><button data-mtab="new" class="active">➕ مشروع جديد</button><button data-mtab="saved">📁 المحفوظة</button></div>
+    <div id="mtab-new">
+      <p class="hint">اختر قالباً جاهزاً (يُولَّد ويُؤثَّث تلقائياً) أو ابدأ من مشروع فارغ.</p>
+      <div class="tpl-grid" id="tplGrid"></div>
+    </div>
+    <div id="mtab-saved" hidden>
+      <div class="row"><button class="tb" id="btnImport">📥 استيراد ملف JSON</button><input type="file" id="fileImport" accept=".json,application/json" hidden></div>
+      <div class="saved-list" id="savedList"></div>
+      <h4>🕘 النسخ السابقة (تُحفظ تلقائياً)</h4><p class="hint">آخر 6 نسخ من عملك، لتستعيد أي شيء ضاع أو تراجع.</p><div class="hist-list" id="histList"></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="mAI" hidden>
+  <div class="modal-box wide ai">
+    <div class="modal-head"><h3>✨ المصمم الذكي</h3><button class="close" data-close>✕</button></div>
+    <div class="ai-layout">
+      <div class="ai-chat">
+        <div class="chat-log" id="chatLog"></div>
+        <div class="chat-quick">
+          <button data-q="صمّم لي شقة 3 غرف نوم وحمامين مع مجلس بنمط عربي">🏠 شقة 3 غرف مع مجلس</button>
+          <button data-q="أثّث الغرفة المحددة بنمط مودرن">🛋️ أثّث الغرفة المحددة</button>
+          <button data-q="اقترح ألوان فاخرة">🎨 ألوان فاخرة</button>
+          <button data-q="كم التكلفة؟">💰 التكلفة</button>
+          <button data-q="نصائح">💡 نصائح</button>
+        </div>
+        <form class="chat-input" id="chatForm"><input id="chatText" placeholder="اكتب طلبك… مثال: أثّث غرفة النوم بنمط إسكندنافي" autocomplete="off"><button type="submit" class="tb primary">إرسال</button></form>
+      </div>
+      <div class="ai-side">
+        <details open><summary>🏗️ توليد مخطط كامل</summary>
+          <div class="gen-form">
+            <label>العرض (م)<input type="number" id="gW" value="15" min="5" max="40" step="0.5"></label>
+            <label>العمق (م)<input type="number" id="gD" value="12" min="4" max="40" step="0.5"></label>
+            <label>غرف النوم<input type="number" id="gBed" value="2" min="0" max="6"></label>
+            <label>الحمامات<input type="number" id="gBath" value="2" min="1" max="5"></label>
+            <label>غرف الأطفال<input type="number" id="gKids" value="0" min="0" max="3"></label>
+            <label>النمط<select id="gStyle"></select></label>
+            <label class="check"><input type="checkbox" id="gMajlis" checked> مجلس</label>
+            <label class="check"><input type="checkbox" id="gDining" checked> غرفة طعام</label>
+            <label class="check"><input type="checkbox" id="gOffice"> مكتب</label>
+            <label class="check"><input type="checkbox" id="gGarden"> حديقة</label>
+          </div>
+          <button class="tb primary full" id="btnGenerate">✨ توليد المخطط والتأثيث</button>
+          <p class="hint">سيستبدل المخطط الحالي (يمكن التراجع).</p>
+        </details>
+        <details><summary>🛋️ تأثيث تلقائي</summary>
+          <label class="field">النمط <select id="fStyle"></select></label>
+          <div class="row"><button class="tb" id="btnFurnishSel">الغرفة المحددة</button><button class="tb" id="btnFurnishAll">كل الغرف</button></div>
+          <label class="check"><input type="checkbox" id="fKeep"> الإبقاء على الأثاث الحالي</label>
+        </details>
+        <details><summary>🎨 لوحة ألوان ونمط</summary>
+          <div class="style-grid" id="styleGrid"></div>
+        </details>
+        <details><summary>💰 تقدير التكلفة</summary><div id="estBox"></div></details>
+        <details><summary>💡 تحليل ونصائح</summary><div id="tipsBox"></div></details>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="mExport" hidden>
+  <div class="modal-box">
+    <div class="modal-head"><h3>⬇ تصدير ومشاركة</h3><button class="close" data-close>✕</button></div>
+    <div class="export-list">
+      <button class="tb" id="exPng2d">🖼️ صورة المخطط (PNG)</button>
+      <button class="tb" id="exPng3d">📷 صورة العرض ثلاثي الأبعاد (PNG)</button>
+      <button class="tb" id="exJson">📄 ملف المشروع (JSON) — للنسخ الاحتياطي</button>
+      <button class="tb" id="exCsv">📋 قائمة الأثاث والتكلفة (CSV)</button>
+      <button class="tb" id="exReport">📑 تقرير PDF مفصّل (مخططات + قائمة الأثاث + التكلفة)</button>
+      <button class="tb" id="exPrint">🖨️ طباعة المخطط الحالي</button>
+      <button class="tb" id="exLink">🔗 نسخ رابط مشاركة</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="mHelp" hidden>
+  <div class="modal-box wide">
+    <div class="modal-head"><h3>❓ كيف أستخدم عمران؟</h3><button class="close" data-close>✕</button></div>
+    <ol class="help-steps">
+      <li><b>ابدأ:</b> من «مشاريعي» اختر قالباً جاهزاً، أو مشروعاً فارغاً، أو اطلب من المصمم الذكي توليد مخطط («صمّم لي شقة غرفتين»).</li>
+      <li><b>ارسم الغرف:</b> أداة «غرفة» ▭ واسحب مستطيلاً. تُنشأ الجدران تلقائياً. أداة «جدار» ━ لرسم جدران حرة نقطة فنقطة (نقر مزدوج للإنهاء).</li>
+      <li><b>الأبواب والنوافذ:</b> اختر الأداة ثم اضغط على أي جدار. غيّر النوع والعرض من لوحة الخصائص.</li>
+      <li><b>الأثاث:</b> من الكتالوج (215 قطعة في 15 فئة، أو قطعة مخصصة بأبعادك) اضغط القطعة ثم اضغط في المخطط. اسحب للتحريك، والمقبض ↻ للتدوير، و<kbd>R</kbd> للتدوير السريع.</li>
+      <li><b>المواد:</b> حدّد غرفة ثم اختر أرضية ودهاناً من تبويب «المواد». لون كل قطعة وخامتها (خشب، رخام، قماش، معدن، زجاج…) من الخصائص.</li>
+      <li><b>الطوابق:</b> من شريط الطوابق أعلى الشاشة: «＋ طابق» لإضافة دور، «⧉» لنسخ الدور الحالي، والقائمة للتنقل. يظهر الدور الأسفل بشفافية لتحاذيه. في 3D تُعرض الأدوار متراصّة أو الدور الحالي فقط (🏢).</li>
+      <li><b>3D:</b> زر «عرض 3D»: اسحب للدوران، عجلة الماوس للتقريب، «تجوّل» للمشي داخل المنزل (W A S D أو الأزرار)، «ليل» لرؤية الإضاءة.</li>
+      <li><b>المصمم الذكي:</b> يؤثث الغرف حسب نوعها ونمطك، يقترح الألوان، يقدّر التكلفة، ويحلل التصميم. يعمل بالكامل داخل متصفحك.</li>
+      <li><b>الحفظ:</b> «حفظ» يخزّن المشروع في المتصفح. «تصدير» لصورة أو ملف JSON أو رابط مشاركة.</li>
+    </ol>
+  </div>
+</div>
+
+<div class="modal" id="mShot" hidden>
+  <div class="modal-box"><div class="modal-head"><h3>📷 الصورة</h3><button class="close" data-close>✕</button></div><img id="shotImg" alt="لقطة"><a class="tb primary full" id="shotDl" download="omran.png">⬇ تنزيل الصورة</a></div>
+</div>
+
+<div class="modal" id="mCustom" hidden>
+  <div class="modal-box">
+    <div class="modal-head"><h3>➕ قطعة مخصصة</h3><button class="close" data-close>✕</button></div>
+    <p class="hint">أنشئ قطعة بأبعاد قطعتك الحقيقية (كنبة ورثتها، خزانة مقاسة…). تُحفظ مع المشروع وتظهر في فئة «قطعي».</p>
+    <form id="customForm">
+      <label class="field">الاسم<input name="n" required maxlength="40" placeholder="مثال: كنبة الصالة القديمة"></label>
+      <div class="grid3"><label class="field">العرض (م)<input name="w" type="number" step="any" min="0.05" max="20" value="1.2" required></label><label class="field">العمق (م)<input name="d" type="number" step="any" min="0.05" max="20" value="0.6" required></label><label class="field">الارتفاع (م)<input name="h" type="number" step="any" min="0.02" max="10" value="0.8" required></label></div>
+      <div class="grid2"><label class="field">الشكل<select name="kind"><option value="generic">صندوق</option><option value="column">أسطوانة</option><option value="cabinet">خزانة بأبواب</option><option value="table">طاولة</option><option value="shelf">لوح رفيع</option><option value="sofa">كنبة</option><option value="bed">سرير</option></select></label><label class="field">التثبيت<select name="mount"><option value="floor">على الأرض</option><option value="wall">على الجدار</option><option value="ceiling">في السقف</option></select></label></div>
+      <div class="grid2"><label class="field">اللون<input name="c" type="color" value="#a8784f"></label><label class="field">السعر التقديري<input name="price" type="number" min="0" step="1" value="0"></label></div>
+      <button type="submit" class="tb primary full">إنشاء ووضع في المخطط</button>
+    </form>
+  </div>
+</div>
+
+<div id="toast" hidden></div>
+<div id="loading"><div class="spinner"></div><p>جاري التحميل…</p></div>
+
+<script src="vendor/three.min.js"></script>
+<script src="vendor/OrbitControls.js"></script>
+<script src="js/catalog.js"></script>
+<script src="js/materials.js"></script>
+<script src="js/state.js"></script>
+<script src="js/editor2d.js"></script>
+<script src="js/view3d.js"></script>
+<script src="js/ai.js"></script>
+<script src="js/templates.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
