@@ -11,5 +11,5 @@ module.exports = defineConfig({
     viewport: { width: 1440, height: 900 },
     launchOptions: { executablePath: process.env.PW_CHROMIUM || '/opt/pw-browsers/chromium', args: ['--use-gl=swiftshader', '--enable-webgl', '--ignore-gpu-blocklist'] },
   },
-  webServer: { command: 'python3 -m http.server 8787', port: 8787, reuseExistingServer: true, timeout: 10000 },
+  webServer: { command: 'python3 -m http.server 8787', cwd: __dirname, port: 8787, reuseExistingServer: false, timeout: 10000 },
 });
