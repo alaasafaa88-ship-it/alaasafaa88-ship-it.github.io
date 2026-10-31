@@ -1,0 +1,29 @@
+feature,area,priority,original,clone,notes
+Draw a path to kick the ball,play,must,yes,yes,S03 smoothing + resampling
+Power from path length,play,must,yes,yes,36-115 units/s
+Curved ball from a bent path,play,must,yes,yes,ball follows the drawn path
+Lofted ball from a long path,play,must,yes,yes,over defenders but can clear the bar
+Goalkeeper that predicts and dives,play,must,yes,yes,imperfect prediction + commit near goal
+Defenders block and chase,play,must,yes,yes,static + patrolling + reaction leash
+Pass to a teammate then shoot,play,must,yes,yes,receiver becomes the holder
+Levels with 1-3 stars,progress,must,yes,yes,touches par + shot quality
+Seasons grouping levels,progress,must,yes,yes,6 seasons x 10 levels
+Lives that refill over time,progress,must,yes,yes,5 hearts every 2 min
+Fail reasons and retry,play,must,yes,yes,S05 with a tip per reason
+Hero name and kit colour,hero,should,yes,yes,S08
+Hero appearance (skin and hair),hero,should,yes,yes,S08
+In-game currency earned per level,progress,should,yes,yes,cash per star and bonuses
+Rewind a failed move for currency,play,should,yes,yes,retry without losing a heart
+Match presentation (clubs scoreboard minute),play,should,yes,yes,generated club names per season
+Trophies per completed season,progress,should,yes,yes,S02 + S09
+Career stats (goals assists),progress,should,yes,yes,S09
+Slow motion near the goal,play,should,yes,yes,toggle in S08
+Sound effects,play,should,yes,yes,WebAudio synthesised
+Tutorial hints on early levels,play,should,yes,yes,levels 1-11
+Installable offline app,platform,should,yes,yes,manifest + service worker
+Levels verified solvable,progress,should,partial,yes,automatic solver + seed salts
+Music,play,could,yes,skip,no licensed audio and no server
+Replays and video sharing,play,could,yes,skip,out of scope
+Leaderboards and achievements,social,could,yes,skip,needs Play Games or a server
+Ads and in-app purchases,platform,could,yes,skip,free web game
+Real clubs and players,content,could,yes,skip,rights
