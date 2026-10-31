@@ -1,0 +1,14 @@
+{
+  "name": "omran",
+  "version": "1.0.0",
+  "private": true,
+  "description": "عمران — مصمم المنازل ثلاثي الأبعاد بالعربي (موقع ثابت، بلا خطوة بناء)",
+  "scripts": {
+    "start": "python3 -m http.server 8080",
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
+    "@playwright/test": "^1.63.0"
+  }
+}

@@ -1,0 +1,11 @@
+/* رموز التصميم — مولّدة من replica/design/tokens.json. غيّر القيم هناك ثم هنا، لا في المكونات. */
+:root {
+  --bg: #f3f4f6; --panel: #ffffff; --canvas: #f7f6f2; --line: #e5e7eb; --line-input: #7d8591;
+  --text: #1f2937; --muted: #5b6470;
+  --p: #a5431c; --p2: #8f3a16; --p-light: #fbf1ea; --on-p: #ffffff;
+  --sel: #2563eb; --danger: #c62f2f; --success: #1f7a4d; --warning: #b45309; --toast: #111827;
+  --radius: 12px; --radius-sm: 8px; --radius-md: 10px; --radius-xl: 16px;
+  --shadow-card: 0 2px 8px rgba(0,0,0,.08); --shadow-float: 0 2px 10px rgba(0,0,0,.12); --shadow-pop: 0 20px 60px rgba(0,0,0,.30);
+  --fast: 150ms; --base: 220ms;
+  --top: 52px; --side: 320px; --props: 300px; --nav: 60px;
+}

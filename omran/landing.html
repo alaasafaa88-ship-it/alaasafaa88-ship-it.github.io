@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>عمران — صمّم بيتك ثلاثي الأبعاد بالعربي، مجاناً وبدون إنترنت</title>
+<meta name="description" content="عمران: مخطط منزلك ثنائي وثلاثي الأبعاد بالعربي. الكتالوج كله مجاني، بلا حساب ولا إعلانات ولا اشتراك، يعمل بدون إنترنت، ومصمم ذكي يؤثث الغرف ويولّد المخططات.">
+<meta name="theme-color" content="#a5431c">
+<meta property="og:title" content="عمران — صمّم بيتك ثلاثي الأبعاد بالعربي">
+<meta property="og:description" content="مخطط 2D وعرض 3D وكتالوج كامل مجاني ومصمم ذكي، بلا حساب وبدون إنترنت.">
+<meta property="og:image" content="assets/landing-shot.png">
+<meta property="og:type" content="website">
+
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/tokens.css">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: 'Tajawal', 'Segoe UI', Tahoma, Arial, sans-serif; color: var(--text); background: var(--panel); line-height: 1.7; }
+  a { color: var(--p2); }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 0 20px; }
+  header { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; }
+  .brand { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 20px; text-decoration: none; color: var(--text); }
+  .logo { width: 36px; height: 36px; border-radius: 10px; background: var(--p); display: grid; place-items: center; }
+  .logo svg { width: 24px; height: 24px; }
+  .btn { display: inline-block; background: var(--p); color: var(--on-p); text-decoration: none; padding: 12px 22px; border-radius: 12px; font-weight: 800; font-size: 16px; }
+  .btn:hover { background: var(--p2); }
+  .btn.ghost { background: transparent; color: var(--p2); border: 1.5px solid var(--p); }
+  .hero { padding: 48px 0 32px; display: grid; grid-template-columns: 1.1fr 1fr; gap: 32px; align-items: center; }
+  h1 { font-size: 36px; line-height: 1.3; margin: 0 0 10px; }
+  .lead { font-size: 18px; color: var(--muted); margin: 0 0 22px; }
+  .shot { border: 1px solid var(--line); border-radius: 16px; overflow: hidden; box-shadow: var(--shadow-pop); background: var(--canvas); }
+  .shot img { display: block; width: 100%; }
+  section { padding: 36px 0; border-top: 1px solid var(--line); }
+  h2 { font-size: 26px; margin: 0 0 16px; }
+  .problem { background: var(--p-light); border-radius: 16px; padding: 22px 24px; }
+  .steps, .feats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .card { border: 1px solid var(--line); border-radius: 14px; padding: 18px; background: #fff; }
+  .card .ic { font-size: 30px; }
+  .card b { display: block; margin: 8px 0 4px; font-size: 16px; }
+  .card p { margin: 0; color: var(--muted); font-size: 14px; }
+  .price { border: 2px solid var(--p); border-radius: 16px; padding: 24px; max-width: 520px; }
+  .price .amount { font-size: 40px; font-weight: 800; color: var(--p2); }
+  .price ul { padding-right: 20px; margin: 10px 0 0; }
+  details { border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; margin-bottom: 8px; background: #fff; }
+  summary { font-weight: 800; cursor: pointer; }
+  footer { padding: 24px 0 40px; color: var(--muted); font-size: 13px; border-top: 1px solid var(--line); }
+  .cta { text-align: center; padding: 48px 0; }
+  @media (max-width: 760px) { .hero { grid-template-columns: 1fr; padding-top: 24px; } h1 { font-size: 28px; } .steps, .feats { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="brand" href="landing.html"><span class="logo"><svg viewBox="0 0 512 512" aria-hidden="true"><path d="M128 400V236c0-70 57-128 128-128s128 58 128 128v164" fill="none" stroke="#fff" stroke-width="40" stroke-linecap="round"/><path d="M96 400h320" stroke="#fff" stroke-width="36" stroke-linecap="round"/></svg></span>عمران</a>
+    <a class="btn ghost" href="index.html">افتح المصمم</a>
+  </header>
+
+  <section class="hero" style="border-top:0">
+    <div>
+      <h1>صمّم بيتك ثلاثي الأبعاد بالعربي — مجاناً، بلا حساب، وبدون إنترنت</h1>
+      <p class="lead">ارسم المخطط، أثّث الغرف من كتالوج كامل غير مقفل، وتجوّل داخل بيتك قبل أن تشتري قطعة واحدة. المصمم الذكي يؤثث الغرفة ويولّد المخطط في ثوانٍ، على جهازك.</p>
+      <a class="btn" href="index.html">ابدأ التصميم الآن — مجاناً</a>
+    </div>
+    <div class="shot"><img src="assets/landing-shot.png" alt="لقطة من محرر عمران: مخطط شقة مؤثثة مع الكتالوج على اليمين"></div>
+  </section>
+
+  <section>
+    <div class="problem">
+      <h2>لماذا عمران؟</h2>
+      <p>أغلب تطبيقات تصميم المنازل تعرض نصف الأثاث مقفلاً خلف اشتراك، تقاطعك بإعلان في كل خطوة، وتطلب بطاقتك "لتجربة مجانية" قد تجد نفسك مشحوناً بعدها. وكثيرون فقدوا تصاميمهم حين انقطع الاتصال أو فتحوا حسابهم من جهاز آخر. ولا واحد منها يعرف ما هو المجلس.</p>
+      <p style="margin:0">عمران مبني على العكس من ذلك كله: كل شيء مجاني، كل شيء على جهازك، وكل شيء بالعربي.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>كيف يعمل؟</h2>
+    <div class="steps">
+      <div class="card"><div class="ic">📐</div><b>1. ارسم الغرف</b><p>اسحب مستطيلاً لكل غرفة، أو اختر قالباً جاهزاً، أو قل للمصمم الذكي «صمّم لي شقة غرفتين» ودعه يرسم.</p></div>
+      <div class="card"><div class="ic">🛋️</div><b>2. أثّث وغيّر المواد</b><p>215 قطعة في 15 فئة من المجلس العربي إلى الحديقة، و20 أرضية و23 دهاناً. غيّر لون وأبعاد أي قطعة.</p></div>
+      <div class="card"><div class="ic">🏠</div><b>3. شاهد وتجوّل</b><p>اضغط «3D» ودُر حول بيتك أو امشِ داخله، ليلاً ونهاراً، والتقط صورة فورية بلا انتظار.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>ما يميّزه</h2>
+    <div class="feats">
+      <div class="card"><div class="ic">🔓</div><b>الكتالوج كله مجاني</b><p>لا قطعة مقفلة، لا "شاهد إعلاناً لفتح الكنبة"، لا اشتراك.</p></div>
+      <div class="card"><div class="ic">🕘</div><b>نسخ سابقة تلقائية</b><p>يحفظ تلقائياً ويحتفظ بآخر 6 نسخ من عملك. ضاع شيء؟ استعده بنقرة.</p></div>
+      <div class="card"><div class="ic">📴</div><b>يعمل بدون إنترنت</b><p>بعد أول زيارة يعمل كتطبيق مثبّت على جوالك أو حاسوبك بلا اتصال.</p></div>
+      <div class="card"><div class="ic">📏</div><b>قطعك أنت</b><p>أدخل أبعاد كنبتك أو خزانتك الحقيقية وجرّبها في المخطط.</p></div>
+      <div class="card"><div class="ic">🪔</div><b>عربي من الداخل</b><p>واجهة عربية كاملة، مجلس وجلسات أرضية ودلّة، وأنماط عربي وتراثي وفاخر.</p></div>
+      <div class="card"><div class="ic">💰</div><b>تكلفة تقديرية ونصائح</b><p>يحسب الأثاث والأرضيات والدهان، وينبّهك إلى غرفة بلا نافذة أو ممر ضيق.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>السعر</h2>
+    <div class="price">
+      <div class="amount">0 ريال</div>
+      <div>مجاني بالكامل ومفتوح المصدر. لا تجربة، لا بطاقة، لا تجديد تلقائي.</div>
+      <ul><li>كل الميزات وكل الكتالوج</li><li>مشاريع غير محدودة على جهازك</li><li>بلا إعلانات</li><li>الكود على GitHub لتتحقق بنفسك</li></ul>
+    </div>
+  </section>
+
+  <section>
+    <h2>أسئلة شائعة</h2>
+    <details><summary>أين تُحفظ مشاريعي؟</summary>في متصفحك على جهازك فقط (localStorage). لا شيء يُرفع إلى أي خادم. للنسخ الاحتياطي أو النقل بين الأجهزة استخدم «تصدير JSON» أو رابط المشاركة.</details>
+    <details><summary>هل يمكنني استيراد مشروع من تطبيق آخر؟</summary>لا يوجد مستورد لصيغ التطبيقات الأخرى حالياً. يمكنك إعادة رسم الغرف في دقائق بأداة الغرفة، أو إدخال مقاساتها للمصمم الذكي ليولّد المخطط.</details>
+    <details><summary>هل الرندر فوتوغرافي؟</summary>اللقطة من محرك WebGL فوري بظلال وإضاءة، تكفي لتقرير ما تشتريه. ليس رندراً فوتوغرافياً يستغرق دقائق على خوادم.</details>
+    <details><summary>هل يعمل على الجوال؟</summary>نعم، بالمتصفح أو مثبّتاً كتطبيق (أضفه إلى الشاشة الرئيسية). التكبير بإصبعين والتجوّل بأزرار على الشاشة.</details>
+    <details><summary>هل المصمم الذكي يرسل بياناتي لأحد؟</summary>لا. يعمل بقواعد محلية داخل المتصفح بلا أي اتصال.</details>
+    <details><summary>ماذا لا يفعل بعد؟</summary>الطوابق المتعددة، الأسقف المائلة، الجدران المنحنية، وتصدير DWG. هذه على خارطة الطريق.</details>
+  </section>
+
+  <div class="cta">
+    <h2>بيتك يستحق أن تراه قبل أن تبنيه</h2>
+    <a class="btn" href="index.html">افتح عمران الآن</a>
+  </div>
+  <footer>عمران — مجاني ومفتوح المصدر. يستخدم Three.js (رخصة MIT) وخط Tajawal (رخصة OFL). · <a href="privacy.html">الخصوصية والشروط</a></footer>
+</div>
+</body>
+</html>

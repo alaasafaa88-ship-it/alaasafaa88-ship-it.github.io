@@ -1,0 +1,5 @@
+{
+  "avoid": ["Planner 5D", "Planner5D", "planner5d", "بيتي 5D", "baity5d", "Baity", "5d"],
+  "domains": ["planner5d.com", "support.planner5d.com"],
+  "colors": ["#4caf50", "#43a047", "#3aa655", "#2e7d32", "#1f8a5b", "#176d48", "#e6f4ed"]
+}
